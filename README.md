@@ -10,7 +10,7 @@ System Context is not possible just by using "winget" as the .exe location must 
 
 ## Requirements
 Newer Windows OS build that includes the WinGet natively in the OS.
-Windows 10 20H2 or newer should be enough  (Windows 11 also of course)
+Windows 10 20H2 or newer should be enough
 ## Limitations
 * Only designed for System Context use  
   * Support for user context could be added later  
