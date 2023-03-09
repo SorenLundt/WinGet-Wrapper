@@ -13,7 +13,7 @@ Newer Windows OS build that includes the WinGet natively in the OS.
 Windows 10 20H2 or newer should be enough  (Windows 11 also of course)
 ## Limitations
 * Only designed for System Context use  
-  * Could be added later  
+  * Support for user context could be added later  
 * WinGet-Detection-Dynamic-Version.ps1 can only be used with "Required" deployments in InTune  
   * An "Available" deployment would result in Company Portal seeing the application as not installed and would never update unless end-user click "Install" again.  
 
