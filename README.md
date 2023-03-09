@@ -32,7 +32,7 @@ Matches locally installed version with fixed defined version.
 
 ![image](https://user-images.githubusercontent.com/127216441/224036973-d206c7c4-82bd-43d8-a9b6-13a884ce702d.png)
 
-## Usage (Example with InTune)
+## Usage (InTune)
 In InTune create an Windows app (Win32) and upload WinGet-Wrapper.InTuneWin as the package file.  
 >**Install:** .\WinGet-Wrapper.ps1 -PackageName "VideoLAN.VLC" -StopProcess "VLC" -ArgumentList "install --exact --id VideoLAN.VLC --silent --accept-package-agreements --accept-source-agreements --scope machine"  
 
