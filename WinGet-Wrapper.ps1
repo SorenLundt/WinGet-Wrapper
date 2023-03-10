@@ -28,8 +28,8 @@ Param (
 )
 
   #Create log folder
-if (!(Test-Path -Path $env:ProgramData\WinGetLogs)) {
-    New-Item -Path $env:ProgramData\WinGetLogs -Force -ItemType Directory
+if (!(Test-Path -Path $env:ProgramData\WinGet-WrapperLogs)) {
+    New-Item -Path $env:ProgramData\WinGet-WrapperLogs -Force -ItemType Directory
 }
 
 #TimeStamp
@@ -39,7 +39,7 @@ Write-Host "ArgumentList: $Arguments"
 Write-Host "Timestamp: $TimeStamp"
 
 #Start Logging
-Start-Transcript -Path "$env:ProgramData\\WinGetLogs\$($PackageName)_WinGet_Wrapper_$($TimeStamp).log"
+Start-Transcript -Path "$env:ProgramData\\WinGet-WrapperLogs\$($PackageName)_WinGet_Wrapper_$($TimeStamp).log"
 
 #Stop process
 if (-not ($StopProcess -eq $null) -and $StopProcess -ne "") {
