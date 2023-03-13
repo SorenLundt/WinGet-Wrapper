@@ -44,3 +44,5 @@ Change the $id variable to match the package id in the detection script and uplo
 ![image](https://user-images.githubusercontent.com/127216441/224716050-cb58f9d6-a6f4-4859-9d42-fb5d7ccf5b3d.png)
 
 Deploy the application and check log files in C:\ProgramData\WinGetLogs
+
+Detection Script examples: https://github.com/SorenLundt/WinGet-Wrapper/tree/main/Examples
