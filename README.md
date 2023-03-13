@@ -18,7 +18,7 @@ Windows 10 20H2 or newer should be enough
 ## Limitations
 * Only designed for System Context use  
   * Support for user context could be added later  
-* WinGet-Detection-Dynamic-Version.ps1 can only be used with "Required" deployments in InTune - Issue: https://github.com/SorenLundt/WinGet-Wrapper/issues/1
+* When using dynamic version it can only be used with "Required" deployments in InTune - Issue: https://github.com/SorenLundt/WinGet-Wrapper/issues/1
   * An "Available" deployment would result in Company Portal seeing the application as not installed and would never update unless end-user click "Install" again. 
 
 
