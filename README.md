@@ -29,7 +29,7 @@ Windows 10 20H2 or newer should be enough
 
 ## WinGet-WrapperDetection.ps1
 Matches locally installed version with newest available version using WinGet or specified exact version specified.  
-![image](https://user-images.githubusercontent.com/127216441/224702120-32020cc8-4b71-4348-a12c-473d24ca8857.png)
+![image](https://user-images.githubusercontent.com/127216441/224714359-7ad66c35-6b8c-441b-87b1-910612a0d2f7.png)
 
 ## Usage (InTune)
 In InTune create an Windows app (Win32) and upload WinGet-Wrapper.InTuneWin as the package file.  
@@ -41,6 +41,6 @@ In InTune create an Windows app (Win32) and upload WinGet-Wrapper.InTuneWin as t
 Change the $id variable to match the package id in the detection script and upload it  ($id = "VideoLAN.VLC")  
   *If specific version is required change the $TargetVersion (Ex. $TargetVersion = "1.0.0.0")*  
   
-![image](https://user-images.githubusercontent.com/127216441/224702305-dca43b64-0d19-455f-bbcc-3a70e98933af.png)
+![image](https://user-images.githubusercontent.com/127216441/224714463-fb2e15c4-c349-417f-a167-d7f03f3da84d.png)
 
 Deploy the application and check log files in C:\ProgramData\WinGetLogs
