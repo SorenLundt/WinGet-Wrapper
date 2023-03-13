@@ -9,7 +9,7 @@ Detection script available for fixed version and for dynamic version (automatica
 * Detection script performs automatic cleanup of log files older than 60 days.
 
 ## Background  
-WinGet have a few limitations in terms of automation and is not integrated with common endpoints management products.
+WinGet have a few limitations in terms of automation and is not integrated with common endpoints management products.  
 System Context is not possible just by using "winget" as the .exe location must be found and this location is not static.
 
 ## Requirements
