@@ -27,15 +27,11 @@ Windows 10 20H2 or newer should be enough
 #### Usage:
 >.\WinGet-Wrapper.ps1 -PackageName "Packagename used in log entry" -StopProcess "kill process using Stop-Process (.exe for the most part is not needed)" -ArgumentList "Arguments Passed to WinGet.exe"
 
-## WinGet-Detection-Dynamic-Version.ps1
-Matches locally installed version with available version using WinGet
+## WinGet-WrapperDetection.ps1
+Matches locally installed version with newest available version(WinGet) or specific version specified.
 
-![image](https://user-images.githubusercontent.com/127216441/224034539-1851944e-1708-4c70-bedb-509a490470cf.png)
+![image](https://user-images.githubusercontent.com/127216441/224700282-d82cfe33-5cda-4d52-bfe8-5674c8520544.png)
 
-## WinGet-DetectionRule-Specific-Version.ps1
-Matches locally installed version with fixed defined version.
-
-![image](https://user-images.githubusercontent.com/127216441/224036973-d206c7c4-82bd-43d8-a9b6-13a884ce702d.png)
 
 ## Usage (InTune)
 In InTune create an Windows app (Win32) and upload WinGet-Wrapper.InTuneWin as the package file.  
@@ -47,6 +43,6 @@ In InTune create an Windows app (Win32) and upload WinGet-Wrapper.InTuneWin as t
 Change the $id variable to match the package id in the detection script and upload it  ($id = "VideoLAN.VLC")  
   *If specific version is required change the $TargetVersion ($TargetVersion = "1.0.0.0")*  
   
-![image](https://user-images.githubusercontent.com/127216441/224046706-6fa57638-809a-468f-9a85-56d85cb0aa97.png)
+![image](https://user-images.githubusercontent.com/127216441/224700695-b62982da-41df-4145-8724-69b1d595843e.png)
 
 Deploy the application and check log files in C:\ProgramData\WinGetLogs
