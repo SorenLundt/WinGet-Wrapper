@@ -10,7 +10,7 @@ Detection script available for fixed version and for dynamic version (automatica
 
 ## Background  
 WinGet have a few limitations in terms of automation and is not integrated with common endpoints management products.  
-System Context is not possible just by using "winget" as the .exe location must be found and this location is not static.
+System Context is not possible just by using "winget" as the .exe location must be found and this location is not static due to versioning in the directory name.
 
 ## Requirements
 Newer Windows OS build that includes the WinGet natively in the OS.
