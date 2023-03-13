@@ -39,7 +39,7 @@ Write-Host "ArgumentList: $Arguments"
 Write-Host "Timestamp: $TimeStamp"
 
 #Start Logging
-Start-Transcript -Path "$env:ProgramData\\WinGet-WrapperLogs\$($PackageName)_WinGet_Wrapper_$($TimeStamp).log"
+Start-Transcript -Path "$env:ProgramData\WinGet-WrapperLogs\$($PackageName)_WinGet_Wrapper_$($TimeStamp).log"
 
 #Stop process
 if (-not ($StopProcess -eq $null) -and $StopProcess -ne "") {
