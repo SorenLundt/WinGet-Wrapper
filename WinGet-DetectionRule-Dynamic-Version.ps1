@@ -4,6 +4,7 @@
 # Version 1.2 - 28-02-2023 SOLU - Added logging capability
 # Version 1.3 - 01-03-2023 SOLU/ChatGPT - Changed expression to properly find the local installed version. Issue that winget list also shows available version from winget
 # Version 1.4 - 01-03-2023 SOLU - Added section to cleanup old log files. 60 days.
+# Version 1.5 - 13-03-2023 SOLU - Added try/catch for regex expression. Previously shown Null error if package not installed locally
 
 #Define Package ID
 $id = "Exact Package ID"
@@ -41,7 +42,10 @@ write-output "WinGet version: $WinGetVersion"
 
 #Get version installed locally on machine
 $searchstring = .\winget.exe list "$id" --exact --accept-source-agreements
-$versions = [regex]::Matches($searchstring, "$id\s+([\d\.]+)").Groups[1].Value
+try{ $versions = [regex]::Matches($searchstring, "$id\s+([\d\.]+)").Groups[1].Value }
+catch { 
+    write-host "Package is not found installed locally (Regex error)"; exit 1
+    }
 if ($versions) {
     $TargetVersion = ($versions | sort {[version]$_} | select -Last 1)
     Write-Host "Installed version: $TargetVersion"
