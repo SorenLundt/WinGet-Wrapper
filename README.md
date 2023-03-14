@@ -26,10 +26,9 @@ Windows 10 20H2 or newer should be enough
 
 ## WinGet-WrapperDetection.ps1
 Matches locally installed version with newest available version using WinGet or specified exact version specified.  
+Can be setup to accept newer installed version locally $AcceptNewerVersion  
+AutoUpdate options available to automatically keep application updated. Runs update with detection  
 ![image](https://user-images.githubusercontent.com/127216441/225035005-5d2a7860-4178-43b6-855e-20db6b33a38f.png)
-
-Example:
-$Target Version =
 
 ## Usage (InTune)
 In InTune create an Windows app (Win32) and upload WinGet-Wrapper.InTuneWin as the package file.  
