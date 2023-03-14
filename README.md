@@ -3,7 +3,7 @@ A PowerShell to install/manage applications using WinGet - Common use case inclu
 Detection script available for fixed version and for dynamic version (automatically matches the installed version with version available with WinGet)
 
 * Dynamically finds the WinGet directory to be used under System Context.   
-* Kill selected process before WinGet command using -StopProcess.  
+* Kill selected process before WinGet command
 * Detection script that dynamically finds latest package available trough WinGet
 * Logs to $env:ProgramData\WinGet-WrapperLogs (Usually C:\ProgramData\WinGet-WrapperLogs) 
 * Detection script performs automatic cleanup of log files older than 60 days.
@@ -27,7 +27,7 @@ Windows 10 20H2 or newer should be enough
 ## WinGet-WrapperDetection.ps1
 Matches locally installed version with newest available version using WinGet or specified exact version specified.  
 Can be setup to accept newer installed version locally $AcceptNewerVersion  
-AutoUpdate options available to automatically keep application updated. Runs update with detection  
+AutoUpdate options available to automatically keep application updated. (Actually not needed for "required" deployments)
 ![image](https://user-images.githubusercontent.com/127216441/225035005-5d2a7860-4178-43b6-855e-20db6b33a38f.png)
 
 ## Usage (InTune)
@@ -38,7 +38,7 @@ In InTune create an Windows app (Win32) and upload WinGet-Wrapper.InTuneWin as t
 
 Change the $id variable to match the package id in the detection script and upload it  ($id = "VideoLAN.VLC")  
   *If specific version is required change the $TargetVersion (Ex. $TargetVersion = "1.0.0.0")*  
-  *If AutoUpdate is desired define the $AutoUpdate variable*  
+  *If AutoUpdate is desired define the $AutoUpdate variable (Actually not needed for "required" deployments) *  
   *If AutoUpdate is desired define the $AutoUpdateArgumentList variable*  
   *If StopProcess when using AutoUpdate is desired define the $AutoUpdateStopProcess variable"*  
   
