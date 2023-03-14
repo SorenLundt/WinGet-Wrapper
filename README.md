@@ -38,10 +38,10 @@ In InTune create an Windows app (Win32) and upload WinGet-Wrapper.InTuneWin as t
 >**Uninstall:** .\WinGet-Wrapper.ps1 -PackageName "VideoLAN.VLC" -StopProcess "VLC" -ArgumentList "Uninstall --exact --id VideoLAN.VLC --silent --accept-source-agreements --scope machine"
 
 Change the $id variable to match the package id in the detection script and upload it  ($id = "VideoLAN.VLC")  
-  *If specific version is required change the $TargetVersion (Ex. $TargetVersion = "1.0.0.0")*
-  *If AutoUpdate is desired define the $AutoUpdate variable*
-  *If AutoUpdate is desired define the $AutoUpdateArgumentList variable*
-  *If StopProcess when using AutoUpdate is desired define the $AutoUpdateStopProcess variable"
+  *If specific version is required change the $TargetVersion (Ex. $TargetVersion = "1.0.0.0")*  
+  *If AutoUpdate is desired define the $AutoUpdate variable*  
+  *If AutoUpdate is desired define the $AutoUpdateArgumentList variable*  
+  *If StopProcess when using AutoUpdate is desired define the $AutoUpdateStopProcess variable"*  
   
 ![image](https://user-images.githubusercontent.com/127216441/225034075-44ae1fe6-25db-49fe-8655-7d94be8584c3.png)
 
