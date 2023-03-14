@@ -28,7 +28,7 @@ Windows 10 20H2 or newer should be enough
 Matches locally installed version with newest available version using WinGet or specified exact version specified.  
 Can be setup to accept newer installed version locally $AcceptNewerVersion  
 AutoUpdate options available to automatically keep application updated. (Actually not needed for "required" deployments)
-![image](https://user-images.githubusercontent.com/127216441/225035005-5d2a7860-4178-43b6-855e-20db6b33a38f.png)
+![image](https://user-images.githubusercontent.com/127216441/225042635-a5d3c7aa-3e76-4540-a4c3-e728b70760f3.png)
 
 ## Usage (InTune)
 In InTune create an Windows app (Win32) and upload WinGet-Wrapper.InTuneWin as the package file.  
@@ -42,6 +42,6 @@ Change the $id variable to match the package id in the detection script and uplo
   *If AutoUpdate is desired define the $AutoUpdateArgumentList variable*  
   *If StopProcess when using AutoUpdate is desired define the $AutoUpdateStopProcess variable"*  
   
-![image](https://user-images.githubusercontent.com/127216441/225039259-8a0d959d-8007-4ea3-938a-a692f70987a6.png)
+![image](https://user-images.githubusercontent.com/127216441/225042834-bf726819-48b2-49cf-87f9-a4e690769910.png)
 
 Deploy the application and check log files in C:\ProgramData\WinGet-WrapperLogs
