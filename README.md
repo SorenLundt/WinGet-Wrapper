@@ -42,6 +42,6 @@ Change the $id variable to match the package id in the detection script and uplo
   *If AutoUpdate is desired define the $AutoUpdateArgumentList variable*  
   *If StopProcess when using AutoUpdate is desired define the $AutoUpdateStopProcess variable"*  
   
-![image](https://user-images.githubusercontent.com/127216441/225034075-44ae1fe6-25db-49fe-8655-7d94be8584c3.png)
+![image](https://user-images.githubusercontent.com/127216441/225039259-8a0d959d-8007-4ea3-938a-a692f70987a6.png)
 
 Deploy the application and check log files in C:\ProgramData\WinGet-WrapperLogs
