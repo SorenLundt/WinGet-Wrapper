@@ -18,9 +18,6 @@ Windows 10 20H2 or newer should be enough
 ## Limitations
 * Only designed for System Context use  
   * Support for user context could be added later  
-* When using dynamic version it can only be used with "Required" deployments in InTune - Issue: https://github.com/SorenLundt/WinGet-Wrapper/issues/1
-  * An "Available" deployment would result in Company Portal seeing the application as not installed and would never update unless end-user click "Install" again. 
-
 
 ## WinGet-Wrapper.ps1
 ![image](https://user-images.githubusercontent.com/127216441/224036611-7bb907f9-7f26-42a1-b4ad-f4e95a1c930e.png)
@@ -29,18 +26,23 @@ Windows 10 20H2 or newer should be enough
 
 ## WinGet-WrapperDetection.ps1
 Matches locally installed version with newest available version using WinGet or specified exact version specified.  
-![image](https://user-images.githubusercontent.com/127216441/224716088-ce9b3c7a-ea96-4237-a7df-e09bc96d1752.png)
+![image](https://user-images.githubusercontent.com/127216441/225035005-5d2a7860-4178-43b6-855e-20db6b33a38f.png)
+
+Example:
+$Target Version =
 
 ## Usage (InTune)
 In InTune create an Windows app (Win32) and upload WinGet-Wrapper.InTuneWin as the package file.  
 >**Install:** .\WinGet-Wrapper.ps1 -PackageName "VideoLAN.VLC" -StopProcess "VLC" -ArgumentList "install --exact --id VideoLAN.VLC --silent --accept-package-agreements --accept-source-agreements --scope machine"  
 
-
 >**Uninstall:** .\WinGet-Wrapper.ps1 -PackageName "VideoLAN.VLC" -StopProcess "VLC" -ArgumentList "Uninstall --exact --id VideoLAN.VLC --silent --accept-source-agreements --scope machine"
 
 Change the $id variable to match the package id in the detection script and upload it  ($id = "VideoLAN.VLC")  
-  *If specific version is required change the $TargetVersion (Ex. $TargetVersion = "1.0.0.0")*  
+  *If specific version is required change the $TargetVersion (Ex. $TargetVersion = "1.0.0.0")*
+  *If AutoUpdate is desired define the $AutoUpdate variable*
+  *If AutoUpdate is desired define the $AutoUpdateArgumentList variable*
+  *If StopProcess when using AutoUpdate is desired define the $AutoUpdateStopProcess variable"
   
-![image](https://user-images.githubusercontent.com/127216441/224716050-cb58f9d6-a6f4-4859-9d42-fb5d7ccf5b3d.png)
+![image](https://user-images.githubusercontent.com/127216441/225034075-44ae1fe6-25db-49fe-8655-7d94be8584c3.png)
 
 Deploy the application and check log files in C:\ProgramData\WinGet-WrapperLogs
