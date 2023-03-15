@@ -13,7 +13,7 @@ WinGet have a few limitations in terms of automation and is not integrated with 
 System Context is not possible just by using "winget" as the .exe location must be found and this location is not static due to versioning in the directory name.
 
 ## Requirements
-Newer Windows OS build that includes the WinGet natively in the OS.
+Newer Windows OS build that includes the WinGet natively in the OS   
 Windows 10 20H2 or newer should be enough
 ## Limitations
 * Only designed for System Context use  
