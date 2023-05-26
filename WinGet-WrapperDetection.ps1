@@ -6,11 +6,17 @@
 # Version 1.4 - 01-03-2023 SOLU - Added section to cleanup old log files. 60 days.
 # Version 1.5 - 13-03-2023 SOLU - Overall added better error handling - try/catch - Write-Output
 # Version 1.6 - 13-03-2023 SOLU - Added functionality to report installed if locally installed version is newer than Available WinGet or TargetVersion. $AcceptNewerVersion
+# Version 1.7 - 14-03-2023 SOLU - Added functionality to auto update - fixes issue #1 on https://github.com/SorenLundt/WinGet-Wrapper
+# Version 1.8 - 26-05-2023 SOLU - Added support for context choice by adding $Context variable
 
 # Define Package ID
 $id = "Exact WinGet package ID"
-$TargetVersion = "Specific Version"  # Set if specific version is desired (Optional)
+$TargetVersion = ""  # Set if specific version is desired (Optional)
 $AcceptNewerVersion = $True   # Allows locally installed versions to be newer than $TargetVersion or available WinGet package version
+$AutoUpdate = $True # New function if $True will run "winget $AutoUpdateArgumentList" if newer available on winget
+$AutoUpdateArgumentList = "update --exact --id $id --silent --disable-interactivity --accept-package-agreements --accept-source-agreements --scope machine"
+$AutoUpdateStopProcess = "" # Stop-process if set, blank no process is stopped before update
+$Context = "System" # Set to either System or User
 
 # Create log folder
 $logPath = "$env:ProgramData\WinGet-WrapperLogs"
@@ -50,8 +56,10 @@ catch {
     Write-Output "Failed to delete old log files: $($_.Exception.Message)"
 }
 
-# Find WinGet.exe Location
-$wingetPath = ""
+# Find WinGet.exe Location if running in System Context
+$wingetPath = "" # Leave Blank
+if ($Context -contains "System"){
+Write-Output "Running in System Context"
 try {
     $resolveWingetPath = Resolve-Path "C:\Program Files\WindowsApps\Microsoft.DesktopAppInstaller_*_x64__8wekyb3d8bbwe"
     if ($resolveWingetPath) {
@@ -68,6 +76,9 @@ catch {
     Write-Output "Failed to find WinGet path: $($_.Exception.Message)"
     exit 1
 }
+}
+else{
+Write-Output "Running in User Context" }
 
 # Get latest version from WinGet if dynamic is chosen
 if ($TargetVersion -eq $null -or $TargetVersion -eq '') {
@@ -87,7 +98,9 @@ catch {
 $InstalledVersion = $null  # Clear Variable
 try {
     $searchString = .\winget.exe list "$id" --exact --accept-source-agreements
-    $versions = [regex]::Matches($searchString, "$id\s+([\d\.]+)").Groups[1].Value
+$versions = [regex]::Matches($searchString, "$id\s+<?\s*([\d\.]+)").Groups[1].Value
+
+   
     if ($versions) {
         $InstalledVersion = ($versions | sort {[version]$_} | select -Last 1)
         Write-Output "Installed version: $InstalledVersion"
@@ -103,25 +116,32 @@ catch {
 }
 
 
-# Check if version on WinGet and local machine matches equal to or greater than TargetVersion
-if ($InstalledVersion -eq $TargetVersion){
+if ($InstalledVersion -ge $TargetVersion -or ($AcceptNewerVersion -and $InstalledVersion -gt $TargetVersion)){
     Write-Output "Exit 0 - Report Installed"
     exit 0 # exit 0 - report installed 
-    }
+}
+elseif ($AutoUpdate -eq $True){
+
+   #Stop process
+    if (-not ($AutoUpdateStopProcess -eq $null) -and $AutoUpdateStopProcess -ne "") {
+    Stop-Process -Name $AutoUpdateStopProcess -Force -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
+    Write-Host "Stopped process: $AutoUpdateStopProcess"
+        }
+
+    $stdout = "$env:ProgramData\WinGet-WrapperLogs\StdOut-$timestamp.txt"
+    $errout = "$env:ProgramData\WinGet-WrapperLogs\ErrOut-$timestamp.txt"
+    
+    Write-Host "Executing $wingetPath\Winget.exe $AutoUpdateArgumentList"
+    Start-Process "$WingetPath\winget.exe" -ArgumentList "$AutoUpdateArgumentList" -PassThru -Wait -RedirectStandardOutput "$stdout" -RedirectStandardError "$errout"
+    
+    get-content "$stdout"
+    get-content "$errout"
+    Remove-item -Path "$stdout"
+    Remove-item -Path "$errout"
+    Write-Output "Exit 0 - Report Installed"
+    exit 0 # exit 0 - updated to latest version
+}
 else {
-  if($AcceptNewerVersion -ne $True){
     Write-Output "Exit 1 - Report Not Installed"
     exit 1 # exit 1 - report not installed
-    }
-   else{
-  if ($InstalledVersion -gt $TargetVersion){
-    Write-Output "Exit 0 - Report Installed (Newer version of $id installed locally)"
-    exit 0 # exit 0 - report installed
-   }
-   else
-   {
-    Write-Output "Exit 1 - Report Not Installed"
-    exit 1 # exit 1 - report not installed
-   }
-  }
 }

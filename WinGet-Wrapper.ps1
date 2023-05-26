@@ -15,16 +15,21 @@
 # Version 1.1 - 28-02-2023 SOLU - Added logging functionality and changed to use Invoke-Expression to get data written to prompt and log file
 # Version 1.2 - 01-03-2023 SOLU - Added logging of winget output + added PackageName parameter used in logging functionality
 # Version 1.3 - 02-03-2023 SOLU - Added stop process to kill any process before upgrading. No user warning is shown etc.
+# Version 1.4 - 26-05-2023 SOLU - Added support for context choice by adding $Context variable
 
 Param (
     [Parameter(Mandatory=$true)]
     [string]$PackageName,
 
     [Parameter()]
+    [string]$Context,
+
+    [Parameter()]
     [string]$StopProcess,
 
     [Parameter(Mandatory=$true)]
     [string]$ArgumentList
+
 )
 
   #Create log folder
@@ -47,11 +52,30 @@ if (-not ($StopProcess -eq $null) -and $StopProcess -ne "") {
     Write-Host "Stopped process: $StopProcess"
 }
 
-$ResolveWingetPath = Resolve-Path "C:\Program Files\WindowsApps\Microsoft.DesktopAppInstaller_*_x64__8wekyb3d8bbwe"
-   if ($ResolveWingetPath){
-           $WingetPath = $ResolveWingetPath[-1].Path
+# Find WinGet.exe Location if running in System Context
+$wingetPath = "" # Leave Blank
+if ($Context -contains "System"){
+Write-Output "Running in System Context"
+try {
+    $resolveWingetPath = Resolve-Path "C:\Program Files\WindowsApps\Microsoft.DesktopAppInstaller_*_x64__8wekyb3d8bbwe"
+    if ($resolveWingetPath) {
+        $wingetPath = $resolveWingetPath[-1].Path
+        Set-Location $wingetPath
+        Write-Output "WinGet path: $wingetPath"
     }
-Set-Location $wingetPath
+    else {
+        Write-Output "Failed to find WinGet path"
+        exit 1
+    }
+}
+catch {
+    Write-Output "Failed to find WinGet path: $($_.Exception.Message)"
+    exit 1
+}
+}
+else{
+Write-Output "Running in User Context" }
+
 $stdout = "$env:ProgramData\WinGet-WrapperLogs\StdOut-$timestamp.txt"
 $errout = "$env:ProgramData\WinGet-WrapperLogs\ErrOut-$timestamp.txt"
 
