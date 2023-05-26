@@ -9,13 +9,13 @@
 # Version 1.7 - 14-03-2023 SOLU - Added functionality to auto update - fixes issue #1 on https://github.com/SorenLundt/WinGet-Wrapper
 # Version 1.8 - 26-05-2023 SOLU - Added support for context choice by adding $Context variable
 
-# Define Package ID
-$id = "Exact WinGet package ID"
+# Settings
+$id = "VideoLAN.VLC" # WinGet Package ID - ex. VideoLAN.VLC
 $TargetVersion = ""  # Set if specific version is desired (Optional)
 $AcceptNewerVersion = $True   # Allows locally installed versions to be newer than $TargetVersion or available WinGet package version
 $AutoUpdate = $True # New function if $True will run "winget $AutoUpdateArgumentList" if newer available on winget
 $AutoUpdateArgumentList = "update --exact --id $id --silent --disable-interactivity --accept-package-agreements --accept-source-agreements --scope machine"
-$AutoUpdateStopProcess = "" # Stop-process if set, blank no process is stopped before update
+$AutoUpdateStopProcess = "vlc" # Stop-process if set, blank no process is stopped before update
 $Context = "System" # Set to either System or User
 
 # Create log folder

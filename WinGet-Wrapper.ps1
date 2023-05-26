@@ -1,12 +1,13 @@
 # Soren Lundt - 22-02-2023 - https://github.com/SorenLundt/WinGet-Wrapper
 # Wrapper for running winget in system context. Finds the WinGet install path and runs desired command
 #
-# Usage: .\WinGet-Wrapper.ps1 -PackageName "Packagename used in log entry" -StopProcess "kill process using Stop-Process (.exe for the most part is not needed)" -ArgumentList "Arguments Passed to WinGet.exe"
-# INSTALL   .\WinGet-Wrapper.ps1 -PackageName "VideoLAN.VLC" -StopProcess "VLC" -ArgumentList "install --exact --id VideoLAN.VLC --silent --accept-package-agreements --accept-source-agreements --scope machine"
-# UNINSTALL .\WinGet-Wrapper.ps1 -PackageName "VideoLAN.VLC" -StopProcess "VLC" -ArgumentList "Uninstall --exact --id VideoLAN.VLC --silent --accept-source-agreements --scope machine"
+# Usage: .\WinGet-Wrapper.ps1 -PackageName "Packagename used in log entry" -Context "User or System" -StopProcess "kill process using Stop-Process (.exe for the most part is not needed)" -ArgumentList "Arguments Passed to WinGet.exe"
+# INSTALL   .\WinGet-Wrapper.ps1 -PackageName "VideoLAN.VLC" -Context "System" -StopProcess "VLC" -ArgumentList "install --exact --id VideoLAN.VLC --silent --accept-package-agreements --accept-source-agreements --scope machine"
+# UNINSTALL .\WinGet-Wrapper.ps1 -PackageName "VideoLAN.VLC" -Context "System" -StopProcess "VLC" -ArgumentList "Uninstall --exact --id VideoLAN.VLC --silent --accept-source-agreements --scope machine"
 #
 # Variables:
 # PackageName = Package name mainly used for naming the log file.
+# Context = User or System context installation
 # StopProcess = Kill a specific process (Stop-process) before executing WinGet command (.exe should not be defined) Skips any error automatically.
 # ArgumentList = Arguments passed directly to WinGet
 #
@@ -18,18 +19,21 @@
 # Version 1.4 - 26-05-2023 SOLU - Added support for context choice by adding $Context variable
 
 Param (
+    # PackageName = Package name mainly used for naming the log file.
     [Parameter(Mandatory=$true)]
     [string]$PackageName,
 
+    # Context = User or System context installation
     [Parameter()]
     [string]$Context,
 
+    # StopProcess = Kill a specific process (Stop-process) before executing WinGet command (.exe should not be defined) Skips any error automatically.
     [Parameter()]
     [string]$StopProcess,
-
+    
+    # ArgumentList = Arguments passed directly to WinGet
     [Parameter(Mandatory=$true)]
     [string]$ArgumentList
-
 )
 
   #Create log folder
