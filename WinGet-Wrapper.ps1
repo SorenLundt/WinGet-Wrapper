@@ -25,7 +25,7 @@ Param (
     [string]$PackageName,
 
     # Context = User or System context installation
-    [Parameter()]
+    [Parameter(Mandatory=$true)]
     [string]$Context,
 
     # StopProcess = Kill a specific process (Stop-process) before executing WinGet command (.exe should not be defined) Skips any error automatically.
