@@ -17,6 +17,7 @@
 # Version 1.2 - 01-03-2023 SOLU - Added logging of winget output + added PackageName parameter used in logging functionality
 # Version 1.3 - 02-03-2023 SOLU - Added stop process to kill any process before upgrading. No user warning is shown etc.
 # Version 1.4 - 26-05-2023 SOLU - Added support for context choice by adding $Context variable
+# Version 1.5 - 30-05-2023 SOLU - Fixed issues with running in user context (Winget path issues)
 
 Param (
     # PackageName = Package name mainly used for naming the log file.
@@ -56,14 +57,14 @@ if (-not ($StopProcess -eq $null) -and $StopProcess -ne "") {
     Write-Host "Stopped process: $StopProcess"
 }
 
-# Find WinGet.exe Location if running in System Context
-$wingetPath = "" # Leave Blank
+# Find WinGet.exe Location
 if ($Context -contains "System"){
 Write-Output "Running in System Context"
 try {
     $resolveWingetPath = Resolve-Path "C:\Program Files\WindowsApps\Microsoft.DesktopAppInstaller_*_x64__8wekyb3d8bbwe"
     if ($resolveWingetPath) {
         $wingetPath = $resolveWingetPath[-1].Path
+        $wingetPath = $wingetPath + "\winget.exe"
         Set-Location $wingetPath
         Write-Output "WinGet path: $wingetPath"
     }
@@ -78,13 +79,15 @@ catch {
 }
 }
 else{
-Write-Output "Running in User Context" }
+Write-Output "Running in User Context"
+$wingetPath = "winget.exe" 
+}
 
 $stdout = "$env:ProgramData\WinGet-WrapperLogs\StdOut-$timestamp.txt"
 $errout = "$env:ProgramData\WinGet-WrapperLogs\ErrOut-$timestamp.txt"
 
-Write-Host "Executing $wingetPath\Winget.exe $ArgumentList"
-Start-Process "$WingetPath\winget.exe" -ArgumentList "$ArgumentList" -PassThru -Wait -RedirectStandardOutput "$stdout" -RedirectStandardError "$errout"
+Write-Host "Executing $wingetPath $ArgumentList"
+Start-Process "$WingetPath" -ArgumentList "$ArgumentList" -PassThru -Wait -RedirectStandardOutput "$stdout" -RedirectStandardError "$errout"
 
 get-content "$stdout"
 get-content "$errout"

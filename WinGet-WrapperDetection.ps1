@@ -8,15 +8,16 @@
 # Version 1.6 - 13-03-2023 SOLU - Added functionality to report installed if locally installed version is newer than Available WinGet or TargetVersion. $AcceptNewerVersion
 # Version 1.7 - 14-03-2023 SOLU - Added functionality to auto update - fixes issue #1 on https://github.com/SorenLundt/WinGet-Wrapper
 # Version 1.8 - 26-05-2023 SOLU - Added support for context choice by adding $Context variable
+# Version 1.9 - 30-05-2023 SOLU - Fixed issues with running in user context (Winget path issues) + Updated version regex to be more precise
 
 # Settings
-$id = "VideoLAN.VLC" # WinGet Package ID - ex. VideoLAN.VLC
+$id = "Discord.Discord" # WinGet Package ID - ex. VideoLAN.VLC
 $TargetVersion = ""  # Set if specific version is desired (Optional)
 $AcceptNewerVersion = $True   # Allows locally installed versions to be newer than $TargetVersion or available WinGet package version
 $AutoUpdate = $True # New function if $True will run "winget $AutoUpdateArgumentList" if newer available on winget
-$AutoUpdateArgumentList = "update --exact --id $id --silent --disable-interactivity --accept-package-agreements --accept-source-agreements --scope machine"
-$AutoUpdateStopProcess = "vlc" # Stop-process if set, blank no process is stopped before update
-$Context = "System" # Set to either System or User
+$AutoUpdateArgumentList = "update --exact --id $id --silent --disable-interactivity --accept-package-agreements --accept-source-agreements --scope user"
+$AutoUpdateStopProcess = "" # Stop-process if set, blank no process is stopped before update
+$Context = "User" # Set to either System or User
 
 # Create log folder
 $logPath = "$env:ProgramData\WinGet-WrapperLogs"
@@ -56,8 +57,7 @@ catch {
     Write-Output "Failed to delete old log files: $($_.Exception.Message)"
 }
 
-# Find WinGet.exe Location if running in System Context
-$wingetPath = "" # Leave Blank
+# Find WinGet.exe Location
 if ($Context -contains "System"){
 Write-Output "Running in System Context"
 try {
@@ -65,7 +65,8 @@ try {
     if ($resolveWingetPath) {
         $wingetPath = $resolveWingetPath[-1].Path
         Set-Location $wingetPath
-        Write-Output "WinGet path: $wingetPath"
+        $wingetPath = $wingetPath + "\winget.exe"
+        Write-Output "WinGet full path: $wingetPath"
     }
     else {
         Write-Output "Failed to find WinGet path"
@@ -78,12 +79,19 @@ catch {
 }
 }
 else{
-Write-Output "Running in User Context" }
+Write-Output "Running in User Context"
+$wingetPath = "winget.exe" 
+}
 
 # Get latest version from WinGet if dynamic is chosen
 if ($TargetVersion -eq $null -or $TargetVersion -eq '') {
 try {
+    if ($Context -contains "System"){
     $winGetOutput = .\winget.exe show --id "$id" --exact
+    }
+    else {
+    $winGetOutput = winget.exe show --id "$id" --exact
+    }
     $TargetVersion = $winGetOutput | Select-String -Pattern "version:" | ForEach-Object { $_.Line -replace '.*version:\s*(.*)', '$1' }
     Write-Output "WinGet version: $TargetVersion"
 }
@@ -94,11 +102,17 @@ catch {
 }elseif ($TargetVersion -ne $null -and $TargetVersion -ne '')
 { Write-Host "TargetVersion: $TargetVersion (Set specific)"}
 
+
 # Get version installed locally on machine
 $InstalledVersion = $null  # Clear Variable
 try {
+    if ($Context -contains "System"){
     $searchString = .\winget.exe list "$id" --exact --accept-source-agreements
-$versions = [regex]::Matches($searchString, "$id\s+<?\s*([\d\.]+)").Groups[1].Value
+    }
+    else {
+    $searchString = winget.exe list "$id" --exact --accept-source-agreements
+    }
+$versions = [regex]::Matches($searchString, "(?m)^.*$id\s*(?:[>]?[\s]*)([\d.]+).*?$").Groups[1].Value
 
    
     if ($versions) {
@@ -131,8 +145,13 @@ elseif ($AutoUpdate -eq $True){
     $stdout = "$env:ProgramData\WinGet-WrapperLogs\StdOut-$timestamp.txt"
     $errout = "$env:ProgramData\WinGet-WrapperLogs\ErrOut-$timestamp.txt"
     
-    Write-Host "Executing $wingetPath\Winget.exe $AutoUpdateArgumentList"
+    Write-Host "Executing Winget.exe $AutoUpdateArgumentList"
+    if ($Context -contains "System"){
     Start-Process "$WingetPath\winget.exe" -ArgumentList "$AutoUpdateArgumentList" -PassThru -Wait -RedirectStandardOutput "$stdout" -RedirectStandardError "$errout"
+    }
+    else {
+    Start-Process "winget.exe" -ArgumentList "$AutoUpdateArgumentList" -PassThru -Wait -RedirectStandardOutput "$stdout" -RedirectStandardError "$errout"
+    }
     
     get-content "$stdout"
     get-content "$errout"
