@@ -11,7 +11,7 @@
 # Version 1.9 - 30-05-2023 SOLU - Fixed issues with running in user context (Winget path issues) + Updated version regex to be more precise
 
 # Settings
-$id = "Discord.Discord" # WinGet Package ID - ex. VideoLAN.VLC
+$id = "Exact WinGet package ID" # WinGet Package ID - ex. VideoLAN.VLC
 $TargetVersion = ""  # Set if specific version is desired (Optional)
 $AcceptNewerVersion = $True   # Allows locally installed versions to be newer than $TargetVersion or available WinGet package version
 $AutoUpdate = $True # New function if $True will run "winget $AutoUpdateArgumentList" if newer available on winget
