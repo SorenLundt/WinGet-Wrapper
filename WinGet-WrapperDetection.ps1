@@ -15,9 +15,9 @@ $id = "Exact WinGet package ID" # WinGet Package ID - ex. VideoLAN.VLC
 $TargetVersion = ""  # Set if specific version is desired (Optional)
 $AcceptNewerVersion = $True   # Allows locally installed versions to be newer than $TargetVersion or available WinGet package version
 $AutoUpdate = $True # New function if $True will run "winget $AutoUpdateArgumentList" if newer available on winget
-$AutoUpdateArgumentList = "update --exact --id $id --silent --disable-interactivity --accept-package-agreements --accept-source-agreements --scope user"
+$AutoUpdateArgumentList = "update --exact --id $id --silent --disable-interactivity --accept-package-agreements --accept-source-agreements --scope Machine"
 $AutoUpdateStopProcess = "" # Stop-process if set, blank no process is stopped before update
-$Context = "User" # Set to either System or User
+$Context = "System" # Set to either System or User
 
 # Create log folder
 $logPath = "$env:ProgramData\WinGet-WrapperLogs"
