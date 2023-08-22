@@ -22,7 +22,7 @@ if (!(Test-Path -Path $logPath)) {
 
 # Set up log file
 $timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
-$logFile = "$logPath\$($id)_WinGet_RequirementsUpdateOnly_$($timestamp).log"
+$logFile = "$logPath\$($id)_WinGet_Requirements_$($timestamp).log"
 try {
     Start-Transcript -Path $logFile -Append
 }
