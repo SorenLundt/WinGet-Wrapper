@@ -9,15 +9,14 @@
 # Version 1.7 - 14-03-2023 SOLU - Added functionality to auto update - fixes issue #1 on https://github.com/SorenLundt/WinGet-Wrapper.
 # Version 1.8 - 26-05-2023 SOLU - Added support for context choice by adding $Context variable
 # Version 1.9 - 30-05-2023 SOLU - Fixed issues with running in user context (Winget path issues) + Updated version regex to be more precise
-# Version 2.0 - 21-08-2023 SOLU - AutoUpdate Feature does not work well with Available deployment type in InTune, due to InTune not
+# Version 2.0 - 21-08-2023 SOLU - Removing AutoUpdate completely. Feature does not support InTune with "Available" deployments, as detection rules only runs periodically for "Required" deployments.
+# Version 2.1 - 22-08-2023 SOLU - Adding UpdateOnly. To be used when only wanting to update apps but not install if not detected.
 
 # Settings
-$id = "Exact WinGet package ID" # WinGet Package ID - ex. VideoLAN.VLC
+$id = "Exact WinGet Package ID" # WinGet Package ID - ex. VideoLAN.VLC
 $TargetVersion = ""  # Set if specific version is desired (Optional)
 $AcceptNewerVersion = $True   # Allows locally installed versions to be newer than $TargetVersion or available WinGet package version
-$AutoUpdate = $False # If $True will update application if newer available on winget. Modify arguments below in $AutoUpdateArgumentList
-$AutoUpdateArgumentList = "update --exact --id $id --silent --disable-interactivity --accept-package-agreements --accept-source-agreements --scope Machine"
-$AutoUpdateStopProcess = "" # Stop-process if set, blank no process is stopped before update
+$UpdateOnly = $False # If set to $True will only update application if installed. If set to $False will install regardless
 $Context = "System" # Set to either System or User
 
 # Create log folder
@@ -113,7 +112,7 @@ try {
     else {
     $searchString = winget.exe list "$id" --exact --accept-source-agreements
     }
-$versions = [regex]::Matches($searchString, "(?m)^.*$id\s*(?:[>]?[\s]*)([\d.]+).*?$").Groups[1].Value
+$versions = [regex]::Matches($searchString, "(?m)^.*$id\s*(?:[<>]?[\s]*)([\d.]+).*?$").Groups[1].Value
 
    
     if ($versions) {
@@ -121,47 +120,30 @@ $versions = [regex]::Matches($searchString, "(?m)^.*$id\s*(?:[>]?[\s]*)([\d.]+).
         Write-Output "Installed version: $InstalledVersion"
     }
     else {
-        Write-Output "Package not found - exit 1"
+        Write-Output "Package not found - #exit 1"
+        exit 1
+    }
+} catch {
+    if ($UpdateOnly -eq $True) {
+        Write-Output "Application '$id' not installed. Nothing to update"
+        # Exit 0 - Not installed, but updateonly so report 0
+        exit 0
+    } elseif ($UpdateOnly -ne $True) {
+        Write-Output "Application '$id' not installed. Reporting 'Not Installed'"
+        # Exit 1 - Report Not Installed
+        exit 1
+    } else {
+        Write-Output "Failed to get installed version: $($_.Exception.Message)"
+        # Exit 1 - Report Not Installed
         exit 1
     }
 }
-catch {
-    Write-Output "Failed to get installed version: $($_.Exception.Message)"
-    exit 1
-}
-
 
 if ($InstalledVersion -ge $TargetVersion -or ($AcceptNewerVersion -and $InstalledVersion -gt $TargetVersion)){
-    Write-Output "Exit 0 - Report Installed"
-    exit 0 # exit 0 - report installed 
-}
-elseif ($AutoUpdate -eq $True){
-
-   #Stop process
-    if (-not ($AutoUpdateStopProcess -eq $null) -and $AutoUpdateStopProcess -ne "") {
-    Stop-Process -Name $AutoUpdateStopProcess -Force -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
-    Write-Host "Stopped process: $AutoUpdateStopProcess"
-        }
-
-    $stdout = "$env:ProgramData\WinGet-WrapperLogs\StdOut-$timestamp.txt"
-    $errout = "$env:ProgramData\WinGet-WrapperLogs\ErrOut-$timestamp.txt"
-    
-    Write-Host "Executing Winget.exe $AutoUpdateArgumentList"
-    if ($Context -contains "System"){
-    Start-Process "$WingetPath\winget.exe" -ArgumentList "$AutoUpdateArgumentList" -PassThru -Wait -RedirectStandardOutput "$stdout" -RedirectStandardError "$errout"
-    }
-    else {
-    Start-Process "winget.exe" -ArgumentList "$AutoUpdateArgumentList" -PassThru -Wait -RedirectStandardOutput "$stdout" -RedirectStandardError "$errout"
-    }
-    
-    get-content "$stdout"
-    get-content "$errout"
-    Remove-item -Path "$stdout"
-    Remove-item -Path "$errout"
-    Write-Output "Exit 0 - Report Installed"
-    exit 0 # exit 0 - updated to latest version
+    Write-Output "#exit 0 - Report Installed"
+    exit 0 ##exit 0 - report installed 
 }
 else {
-    Write-Output "Exit 1 - Report Not Installed"
-    exit 1 # exit 1 - report not installed
+    Write-Output "#exit 1 - Report Not Installed"
+    exit 1 # #exit 1 - report not installed
 }
