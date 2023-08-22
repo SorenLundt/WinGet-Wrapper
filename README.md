@@ -35,6 +35,9 @@ To be used when only wanting to update if application is already installed. (Upd
 
 ![image](https://github.com/SorenLundt/WinGet-Wrapper/assets/127216441/1617c13e-11ef-4bfd-96c7-c4962706b0be)
 
+Outputs either "Installed" or "Not Installed"
+
+![image](https://github.com/SorenLundt/WinGet-Wrapper/assets/127216441/b8cd24fd-da34-4e1c-aeb2-0627717e1244)
 
 ## Usage (InTune)
 In InTune create an Windows app (Win32) and upload WinGet-Wrapper.InTuneWin as the package file.  
