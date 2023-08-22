@@ -21,7 +21,7 @@ Windows 10 20H2 or newer should be enough
 ## WinGet-Wrapper.ps1
 ![image](https://github.com/SorenLundt/WinGet-Wrapper/assets/127216441/fa0a68a2-b790-489f-8995-fd26d8031f55)
 #### Usage:
->.\WinGet-Wrapper.ps1 -PackageName "Packagename used in log entry" -Context "User or System Context" -StopProcess "kill process using Stop-Process (do not add .exe)" -ArgumentList "Arguments Passed to WinGet.exe"
+>Powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File WinGet-Wrapper.ps1 -PackageName "Packagename used in log entry" -Context "User or System Context" -StopProcess "kill process using Stop-Process (do not add .exe)" -ArgumentList "Arguments Passed to WinGet.exe"
 
 ## WinGet-WrapperDetection.ps1
 Matches locally installed version with newest available version using WinGet or specified exact version specified.  
@@ -38,9 +38,9 @@ To be used when only wanting to update if application is already installed. (Upd
 
 ## Usage (InTune)
 In InTune create an Windows app (Win32) and upload WinGet-Wrapper.InTuneWin as the package file.  
->**Install:** .\WinGet-Wrapper.ps1 -PackageName "VideoLAN.VLC" -Context "System" -StopProcess "VLC" -ArgumentList "install --exact --id VideoLAN.VLC --silent --accept-package-agreements --accept-source-agreements --scope machine"  
+>**Install:** Powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File WinGet-Wrapper.ps1 -PackageName "VideoLAN.VLC" -Context "System" -StopProcess "VLC" -ArgumentList "install --exact --id VideoLAN.VLC --silent --accept-package-agreements --accept-source-agreements --scope machine"  
 
->**Uninstall:** .\WinGet-Wrapper.ps1 -PackageName "VideoLAN.VLC" -Context "System" -StopProcess "VLC" -ArgumentList "Uninstall --exact --id VideoLAN.VLC --silent --accept-source-agreements --scope machine"
+>**Uninstall:** Powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File WinGet-Wrapper.ps1 -PackageName "VideoLAN.VLC" -Context "System" -StopProcess "VLC" -ArgumentList "Uninstall --exact --id VideoLAN.VLC --silent --accept-source-agreements --scope machine"
 
 Change the $id variable to match the package id in the detection script and upload it  ($id = "VideoLAN.VLC")  
   *If specific version is required change the $TargetVersion (Ex. $TargetVersion = "1.0.0.0")*  
