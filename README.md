@@ -21,17 +21,20 @@ Windows 10 20H2 or newer should be enough
 ## WinGet-Wrapper.ps1
 ![image](https://github.com/SorenLundt/WinGet-Wrapper/assets/127216441/fa0a68a2-b790-489f-8995-fd26d8031f55)
 #### Usage:
->.\WinGet-Wrapper.ps1 -PackageName "Packagename used in log entry" -Context "User or System Context" -StopProcess "kill process using Stop-Process (.exe for the most part is not needed)" -ArgumentList "Arguments Passed to WinGet.exe"
+>.\WinGet-Wrapper.ps1 -PackageName "Packagename used in log entry" -Context "User or System Context" -StopProcess "kill process using Stop-Process (do not add .exe)" -ArgumentList "Arguments Passed to WinGet.exe"
 
 ## WinGet-WrapperDetection.ps1
 Matches locally installed version with newest available version using WinGet or specified exact version specified.  
 Can be setup to accept newer installed version locally $AcceptNewerVersion
+
 ![image](https://github.com/SorenLundt/WinGet-Wrapper/assets/127216441/aac66723-24f9-4e7f-94ed-7a79ed49c623)
 
 ## WinGet-WrapperRequirements.ps1
 Checks if application is detected locally. If not detected will not attempt update/install
 To be used when only wanting to update if application is already installed. (Update Only)
-![image](https://github.com/SorenLundt/WinGet-Wrapper/assets/127216441/300bc10c-7319-45b3-9c14-75eac353a25d)
+
+![image](https://github.com/SorenLundt/WinGet-Wrapper/assets/127216441/1617c13e-11ef-4bfd-96c7-c4962706b0be)
+
 
 ## Usage (InTune)
 In InTune create an Windows app (Win32) and upload WinGet-Wrapper.InTuneWin as the package file.  
