@@ -86,14 +86,14 @@ $versions = [regex]::Matches($searchString, "(?m)^.*$id\s*(?:[<>]?[\s]*)([\d.]+)
    
     if ($versions) {
         $InstalledVersion = ($versions | sort {[version]$_} | select -Last 1)
-        Write-Output "Installed version: $InstalledVersion"
+        Write-Output "Installed"
+        exit 0
     }
     else {
-        Write-Output "Package not found - exit 1"
-        exit 1
+        Write-Output "Not Installed"
+        exit 0
     }
 } catch {
-        Write-Output "Package not found - exit 1 - $($_.Exception.Message)"
-        # Exit 1 - Report Not Installed
-        exit 1
+        Write-Output "Not Installed"
+        exit 0
     }
