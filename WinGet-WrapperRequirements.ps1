@@ -67,7 +67,6 @@ if ($Context -contains "System"){
         $resolveWingetPath = Resolve-Path "C:\Program Files\WindowsApps\Microsoft.DesktopAppInstaller_*_x64__8wekyb3d8bbwe"
         if ($resolveWingetPath) {
             $wingetPath = $resolveWingetPath[-1].Path
-            Set-Location $wingetPath
             $wingetPath = $wingetPath + "\winget.exe"
             Write-Output "WinGet path: $wingetPath"
         }
