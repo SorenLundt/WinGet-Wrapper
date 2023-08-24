@@ -2,14 +2,19 @@
 # Requirements script to check if desired application is installed. To be used when only wanting to update the application if already installed.  (UpdateOnly)
 #
 # Version History:
-# Version 1.0 - 22-08-2023 SOLU - Initial version.
+# Version 1.0 - 22-08-2023 SorenLundt - Initial version.
+# Version 1.1 - 24-08-2023 SorenLundt - Adding automatically detection if running in user or system context. Removing Context parameter
+# Version 1.2 - 24-08-2023 SorenLundt - WindowStyle Hidden for winget process + Other small fixes..
 
 # Settings
-$id = "Exact WinGet Package ID" # WinGet Package ID - ex. VideoLAN.VLC
-$Context = "System" # Set to either System or User
+$id = "VideoLAN.VLC" # WinGet Package ID - ex. VideoLAN.VLC
+
+#Define common variables
+$logPath = "$env:ProgramData\WinGet-WrapperLogs"
+$stdout = "$logPath\StdOut-$timestamp.txt"
+$errout = "$logPath\ErrOut-$timestamp.txt"
 
 # Create log folder
-$logPath = "$env:ProgramData\WinGet-WrapperLogs"
 if (!(Test-Path -Path $logPath)) {
     try {
         New-Item -Path $logPath -Force -ItemType Directory | Out-Null
@@ -35,52 +40,58 @@ catch {
 Write-OutPut "ID = $id"
 
 # Clean log files older than X days
-$daysToKeep = 60
-$filesToDelete = Get-ChildItem $logPath -Recurse -Include *.log | Where-Object LastWriteTime -lt (Get-Date).AddDays(-$daysToKeep)
+$daysToKeepLogs = 60
+$filesToDelete = Get-ChildItem $logPath -Recurse -Include *.log | Where-Object LastWriteTime -lt (Get-Date).AddDays(-$daysToKeepLogs)
 try {
     $count = $filesToDelete.Count
     $filesToDelete | Remove-Item -Force | Out-Null
-    Write-Output "Cleaned up a total of $count old logs older than $daysToKeep days."
+    Write-Output "Cleaned up a total of $count old logs older than $daysToKeepLogs days."
 }
 catch {
     Write-Output "Failed to delete old log files: $($_.Exception.Message)"
 }
 
+#Determine if running in system or user context
+if ($env:USERNAME -like "*$env:COMPUTERNAME*") {
+    Write-Output "Running in System Context"
+    $Context = "System"
+   }
+   else {
+    Write-Output "Running in User Context"
+    $Context = "User"
+   }
+
 # Find WinGet.exe Location
 if ($Context -contains "System"){
-Write-Output "Running in System Context"
-try {
-    $resolveWingetPath = Resolve-Path "C:\Program Files\WindowsApps\Microsoft.DesktopAppInstaller_*_x64__8wekyb3d8bbwe"
-    if ($resolveWingetPath) {
-        $wingetPath = $resolveWingetPath[-1].Path
-        Set-Location $wingetPath
-        $wingetPath = $wingetPath + "\winget.exe"
-        Write-Output "WinGet full path: $wingetPath"
+    try {
+        $resolveWingetPath = Resolve-Path "C:\Program Files\WindowsApps\Microsoft.DesktopAppInstaller_*_x64__8wekyb3d8bbwe"
+        if ($resolveWingetPath) {
+            $wingetPath = $resolveWingetPath[-1].Path
+            Set-Location $wingetPath
+            $wingetPath = $wingetPath + "\winget.exe"
+            Write-Output "WinGet path: $wingetPath"
+        }
+        else {
+            Write-Output "Failed to find WinGet path"
+            exit 1
+        }
     }
-    else {
-        Write-Output "Failed to find WinGet path"
+    catch {
+        Write-Output "Failed to find WinGet path: $($_.Exception.Message)"
         exit 1
     }
-}
-catch {
-    Write-Output "Failed to find WinGet path: $($_.Exception.Message)"
-    exit 1
-}
-}
-else{
-Write-Output "Running in User Context"
-$wingetPath = "winget.exe" 
-}
+    }
+    else{
+        # Running in user context. Set WingetPath
+    $wingetPath = "winget.exe" 
+    }
 
 # Get version installed locally on machine
 $InstalledVersion = $null  # Clear Variable
 try {
-    if ($Context -contains "System"){
-    $searchString = .\winget.exe list "$id" --exact --accept-source-agreements
-    }
-    else {
-    $searchString = winget.exe list "$id" --exact --accept-source-agreements
-    }
+    Start-Process -FilePath $wingetPath -ArgumentList "list $id --exact --accept-source-agreements" -WindowStyle Hidden -Wait -RedirectStandardOutput $stdout
+    $searchString = Get-Content -Path $stdout
+    Remove-Item -Path $stdout -Force
 $versions = [regex]::Matches($searchString, "(?m)^.*$id\s*(?:[<>]?[\s]*)([\d.]+).*?$").Groups[1].Value
 
    
