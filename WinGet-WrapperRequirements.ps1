@@ -7,7 +7,7 @@
 # Version 1.2 - 24-08-2023 SorenLundt - WindowStyle Hidden for winget process + Other small fixes..
 
 # Settings
-$id = "VideoLAN.VLC" # WinGet Package ID - ex. VideoLAN.VLC
+$id = "Exact WinGet Package ID" # WinGet Package ID - ex. VideoLAN.VLC
 
 #Define common variables
 $logPath = "$env:ProgramData\WinGet-WrapperLogs"

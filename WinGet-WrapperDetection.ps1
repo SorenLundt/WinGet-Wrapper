@@ -16,7 +16,7 @@
 # Version 2.4 - 24-08-2023 SorenLundt - WindowStyle Hidden for winget process + Other small fixes..
 
 # Settings
-$id = "VideoLAN.VLC" # WinGet Package ID - ex. VideoLAN.VLC
+$id = "Exact WinGet Package ID" # WinGet Package ID - ex. VideoLAN.VLC
 $TargetVersion = ""  # Set if specific version is desired (Optional)
 $AcceptNewerVersion = $True   # Allows locally installed versions to be newer than $TargetVersion or available WinGet package version
 
