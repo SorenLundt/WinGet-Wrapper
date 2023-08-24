@@ -6,7 +6,7 @@ Detection script automaatically check local installed version against latest win
 * Kill selected process before WinGet command
 * Allows running pre and post script before installation
 * Detection script that dynamically finds latest package available trough WinGet
-* Requirement script to allow creating packages that only update the application if detected
+* Requirement script to allow creating packages for update purposes only
 * Logs to $env:ProgramData\WinGet-WrapperLogs (Usually C:\ProgramData\WinGet-WrapperLogs)
 * Dynamically detect if running in user or system context
 * Performs automatic cleanup of log files older than 60 days.
