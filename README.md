@@ -53,6 +53,7 @@ Change the $id variable to match the package id in the detection script and uplo
 ![image](https://github.com/SorenLundt/WinGet-Wrapper/assets/127216441/2aea611c-7733-4f93-9cbe-a44b4f66333d)
 
 **Application Update Only**
+
 For creating application that will only update/install if application is already installed
 Perform the same steps as in "Application Installation".
 Setup Requirement rule script with return string value of "Installed"
