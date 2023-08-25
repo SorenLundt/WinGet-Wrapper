@@ -2,8 +2,8 @@
 # Wrapper for running winget in system context. Finds the WinGet install path and runs desired command
 #
 # Usage: .\WinGet-Wrapper.ps1 -PackageName "Packagename used in log entry" -Context "User or System" -StopProcess "kill process using Stop-Process (.exe for the most part is not needed)" -ArgumentList "Arguments Passed to WinGet.exe"
-# INSTALL   .\WinGet-Wrapper.ps1 -PackageName "VideoLAN.VLC" -StopProcess "VLC" -PreScript "" -PostScript "" -ArgumentList "install --exact --id VideoLAN.VLC --silent --accept-package-agreements --accept-source-agreements --scope machine"
-# UNINSTALL .\WinGet-Wrapper.ps1 -PackageName "VideoLAN.VLC" -StopProcess "VLC" -PreScript "" -PostScript "" -ArgumentList "Uninstall --exact --id VideoLAN.VLC --silent --accept-source-agreements --scope machine"
+# INSTALL   .\WinGet-Wrapper.ps1 -PackageName "VideoLAN.VLC" -StopProcess "VLC" -PreScript "Script1.ps1" -PostScript "Script2.ps1" -ArgumentList "install --exact --id VideoLAN.VLC --silent --accept-package-agreements --accept-source-agreements --scope machine"
+# UNINSTALL .\WinGet-Wrapper.ps1 -PackageName "VideoLAN.VLC" -StopProcess "VLC" -PreScript "Script1.ps1" -PostScript "Script2.ps1" -ArgumentList "Uninstall --exact --id VideoLAN.VLC --silent --accept-source-agreements --scope machine"
 #
 # Variables:
 # PackageName = Package name mainly used for naming the log file.
