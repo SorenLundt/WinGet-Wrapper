@@ -45,6 +45,7 @@ Param (
 )
 
 #Define common variables
+$timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
 $logPath = "$env:ProgramData\WinGet-WrapperLogs"
 $stdout = "$logPath\StdOut-$timestamp.txt"
 $errout = "$logPath\ErrOut-$timestamp.txt"
@@ -61,7 +62,6 @@ if (!(Test-Path -Path $logPath)) {
 }
 
 # Set up log file
-$timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
 $logFile = "$logPath\$($PackageName)_WinGet_Wrapper_$($TimeStamp).log"
 try {
     Start-Transcript -Path $logFile -Append
@@ -105,7 +105,7 @@ if (-not ($StopProcess -eq $null) -and $StopProcess -ne "") {
 #Determine if running in system or user context
 if ($env:USERNAME -like "*$env:COMPUTERNAME*") {
     Write-Output "Running in System Context"
-    $Context = "System"
+    $Context = "Machine"
    }
    else {
     Write-Output "Running in User Context"
@@ -113,7 +113,7 @@ if ($env:USERNAME -like "*$env:COMPUTERNAME*") {
    }
 
 # Find WinGet.exe Location
-if ($Context -contains "System"){
+if ($Context -contains "Machine"){
 try {
     $resolveWingetPath = Resolve-Path "C:\Program Files\WindowsApps\Microsoft.DesktopAppInstaller_*_x64__8wekyb3d8bbwe"
     if ($resolveWingetPath) {

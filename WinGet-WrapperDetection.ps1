@@ -14,6 +14,7 @@
 # Version 2.2 - 24-08-2023 SorenLundt - Removing UpdateOnly as this would lead to false positive, indicating that a given app was installed when actually it is not.
 # Version 2.3 - 24-08-2023 SorenLundt - Adding automatically detection if running in user or system context. Removing Context parameter
 # Version 2.4 - 24-08-2023 SorenLundt - WindowStyle Hidden for winget process + Other small fixes..
+# Version 2.5 - 24-08-2023 SorenLundt - Added --scope $Context to winget cmd to avoid detecting applications in wrong context
 
 # Settings
 $id = "Exact WinGet Package ID" # WinGet Package ID - ex. VideoLAN.VLC
@@ -21,6 +22,7 @@ $TargetVersion = ""  # Set if specific version is desired (Optional)
 $AcceptNewerVersion = $True   # Allows locally installed versions to be newer than $TargetVersion or available WinGet package version
 
 #Define common variables
+$timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
 $logPath = "$env:ProgramData\WinGet-WrapperLogs"
 $stdout = "$logPath\StdOut-$timestamp.txt"
 $errout = "$logPath\ErrOut-$timestamp.txt"
@@ -37,7 +39,6 @@ if (!(Test-Path -Path $logPath)) {
 }
 
 # Set up log file
-$timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
 $logFile = "$logPath\$($id)_WinGet_Detection_$($timestamp).log"
 try {
     Start-Transcript -Path $logFile -Append
@@ -67,7 +68,7 @@ catch {
 #Determine if running in system or user context
 if ($env:USERNAME -like "*$env:COMPUTERNAME*") {
     Write-Output "Running in System Context"
-    $Context = "System"
+    $Context = "Machine"
    }
    else {
     Write-Output "Running in User Context"
@@ -75,7 +76,7 @@ if ($env:USERNAME -like "*$env:COMPUTERNAME*") {
    }
 
 # Find WinGet.exe Location
-if ($Context -contains "System"){
+if ($Context -contains "Machine"){
     try {
         $resolveWingetPath = Resolve-Path "C:\Program Files\WindowsApps\Microsoft.DesktopAppInstaller_*_x64__8wekyb3d8bbwe"
         if ($resolveWingetPath) {
@@ -119,7 +120,7 @@ catch {
 # Get version installed locally on machine
 $InstalledVersion = $null  # Clear Variable
 try {
-    Start-Process -FilePath $wingetPath -ArgumentList "list $id --exact --accept-source-agreements" -WindowStyle Hidden -Wait -RedirectStandardOutput $stdout
+    Start-Process -FilePath $wingetPath -ArgumentList "list $id --exact --accept-source-agreements --scope $Context" -WindowStyle Hidden -Wait -RedirectStandardOutput $stdout
     $searchString = Get-Content -Path $stdout
     Remove-Item -Path $stdout -Force
 $versions = [regex]::Matches($searchString, "(?m)^.*$id\s*(?:[<>]?[\s]*)([\d.]+).*?$").Groups[1].Value
