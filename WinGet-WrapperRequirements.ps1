@@ -5,6 +5,7 @@
 # Version 1.0 - 22-08-2023 SorenLundt - Initial version.
 # Version 1.1 - 24-08-2023 SorenLundt - Adding automatically detection if running in user or system context. Removing Context parameter
 # Version 1.2 - 24-08-2023 SorenLundt - WindowStyle Hidden for winget process + Other small fixes..
+# Version 1.3 - 25-08-2023 SorenLundt - Removing logging part. The script must only output "Installed" or "Not Installed"
 
 # Settings
 $id = "Exact WinGet Package ID" # WinGet Package ID - ex. VideoLAN.VLC
@@ -14,50 +15,11 @@ $logPath = "$env:ProgramData\WinGet-WrapperLogs"
 $stdout = "$logPath\StdOut-$timestamp.txt"
 $errout = "$logPath\ErrOut-$timestamp.txt"
 
-# Create log folder
-if (!(Test-Path -Path $logPath)) {
-    try {
-        New-Item -Path $logPath -Force -ItemType Directory | Out-Null
-    }
-    catch {
-        Write-Output "Failed to create log directory: $($_.Exception.Message)"
-        exit 1
-    }
-}
-
-# Set up log file
-$timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
-$logFile = "$logPath\$($id)_WinGet_Requirements_$($timestamp).log"
-try {
-    Start-Transcript -Path $logFile -Append
-}
-catch {
-    Write-Output "Failed to start transcript: $($_.Exception.Message)"
-    exit 1
-}
-
-#Write useful variables to log
-Write-OutPut "ID = $id"
-
-# Clean log files older than X days
-$daysToKeepLogs = 60
-$filesToDelete = Get-ChildItem $logPath -Recurse -Include *.log | Where-Object LastWriteTime -lt (Get-Date).AddDays(-$daysToKeepLogs)
-try {
-    $count = $filesToDelete.Count
-    $filesToDelete | Remove-Item -Force | Out-Null
-    Write-Output "Cleaned up a total of $count old logs older than $daysToKeepLogs days."
-}
-catch {
-    Write-Output "Failed to delete old log files: $($_.Exception.Message)"
-}
-
 #Determine if running in system or user context
 if ($env:USERNAME -like "*$env:COMPUTERNAME*") {
-    Write-Output "Running in System Context"
     $Context = "System"
    }
    else {
-    Write-Output "Running in User Context"
     $Context = "User"
    }
 
@@ -68,7 +30,7 @@ if ($Context -contains "System"){
         if ($resolveWingetPath) {
             $wingetPath = $resolveWingetPath[-1].Path
             $wingetPath = $wingetPath + "\winget.exe"
-            Write-Output "WinGet path: $wingetPath"
+            #Write-Output "WinGet path: $wingetPath"
         }
         else {
             Write-Output "Failed to find WinGet path"
