@@ -11,7 +11,7 @@ Easily import finished applications including WinGet metadata using WinGet-Wrapp
 * Logs to $env:ProgramData\WinGet-WrapperLogs (Usually C:\ProgramData\WinGet-WrapperLogs)
 * Dynamically detect if running in user or system context
 * Performs automatic cleanup of log files older than 60 days.
-* Directly import WinGet packages to InTune
+* Directly import WinGet packages to InTune including WinGet package metadata
 
 ## Background / Why?
 WinGet have a few limitations in terms of automation and is not integrated with common endpoints management products.  
