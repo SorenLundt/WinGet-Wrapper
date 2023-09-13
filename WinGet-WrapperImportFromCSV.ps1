@@ -10,7 +10,7 @@
 # SkipConfirmation = Skips confirmation for each package
 #
 # csvFile columns:
-# PackageID,Context,AcceptNewerVersion,UpdateOnly,Version,StopProcessInstall,StopProcessUninstall,PreScriptInstall,PostScriptInstall,PreScriptUninstall,PostScriptUninstall,CustomArgumentListInstall,CustomArgumentListUninstall
+# PackageID,Context,AcceptNewerVersion,UpdateOnly,TargetVersion,StopProcessInstall,StopProcessUninstall,PreScriptInstall,PostScriptInstall,PreScriptUninstall,PostScriptUninstall,CustomArgumentListInstall,CustomArgumentListUninstall
 #
 # Requirements:
 # Requires Script files and IntuneWinAppUtil.exe to be present in script directory
@@ -20,15 +20,15 @@
 
 #Parameters
 Param (
-    #CSV File
+    #CSV File to import from (default: WinGet-WrapperImportFromCSV.csv)
     [Parameter()]
     [string]$csvFile = "WinGet-WrapperImportFromCSV.csv",
 
-    #TenantID
+    #TenantID to connect to MSGraph/InTune
     [Parameter(Mandatory=$True)]
     [string]$TenantID,
 
-    #Skip package confirmation
+    #Skips confirmation for each package before import
     [Switch]$SkipConfirmation = $false
 )
 
