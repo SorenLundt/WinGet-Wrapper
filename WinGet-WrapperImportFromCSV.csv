@@ -1,0 +1,2 @@
+PackageID,Context,AcceptNewerVersion,UpdateOnly,Version,StopProcessInstall,StopProcessUninstall,PreScriptInstall,PostScriptInstall,PreScriptUninstall,PostScriptUninstall,CustomArgumentListInstall,CustomArgumentListUninstall
+VideoLAN.VLC,Machine,1,1,,vlc,vlc,,,,,,

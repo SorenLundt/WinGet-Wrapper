@@ -1,4 +1,4 @@
-﻿# Soren Lundt - 22-08-2023 - https://github.com/SorenLundt/WinGet-Wrapper
+# Soren Lundt - 22-08-2023 - https://github.com/SorenLundt/WinGet-Wrapper
 # Requirements script to check if desired application is installed. To be used when only wanting to update the application if already installed.  (UpdateOnly)
 #
 # Version History:
@@ -9,7 +9,7 @@
 # Version 1.4 - 24-08-2023 SorenLundt - Added --scope $Context to winget cmd to avoid detecting applications in wrong context
 
 # Settings
-$id = "Exact WinGet Package ID" # WinGet Package ID - ex. VideoLAN.VLC
+$id = "VideoLAN.VLC" # WinGet Package ID - ex. VideoLAN.VLC
 # EndSettings
 
 #Define common variables

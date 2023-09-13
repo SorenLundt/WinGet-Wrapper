@@ -1,4 +1,4 @@
-﻿# Soren Lundt - 22-02-2023 - https://github.com/SorenLundt/WinGet-Wrapper
+# Soren Lundt - 22-02-2023 - https://github.com/SorenLundt/WinGet-Wrapper
 # Version History
 # Version 1.1 - 27-02-2023 SorenLundt - Updated to retrieve current version from WinGet and dynamically check for latest version and detect based.
 # Version 1.2 - 28-02-2023 SorenLundt - Added logging capability
@@ -17,9 +17,9 @@
 # Version 2.5 - 24-08-2023 SorenLundt - Added --scope $Context to winget cmd to avoid detecting applications in wrong context
 
 # Settings
-$id = "Exact WinGet Package ID" # WinGet Package ID - ex. VideoLAN.VLC
+$id = "VideoLAN.VLC" # WinGet Package ID - ex. VideoLAN.VLC
 $TargetVersion = ""  # Set if specific version is desired (Optional)
-$AcceptNewerVersion = "$True"   # Allows locally installed versions to be newer than $TargetVersion or available WinGet package version
+$AcceptNewerVersion = $True   # Allows locally installed versions to be newer than $TargetVersion or available WinGet package version
 # EndSettings
 
 #Define common variables
