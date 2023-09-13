@@ -18,9 +18,9 @@ WinGet have a few limitations in terms of automation and is not integrated with 
 System Context is not possible by using "winget" as the .exe location must be found and this location is not static due to versioning in the directory name.
 
 ## Requirements
-Newer Windows OS build that includes the WinGet natively in the OS   
-Windows 10 20H2 or newer should be enough
-Powershell 5.1
+Newer Windows OS build that includes the WinGet natively in the OS<br>
+Windows 10 20H2 or newer should be enough<br>
+Powershell 5.1<br>
 WinGet-WrapperImportFromCSV.ps1 automatically installs required module "IntuneWin32App" (github.com/MSEndpointMgr/IntuneWin32App)
 
 ## WinGet-Wrapper.ps1
