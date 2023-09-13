@@ -1,6 +1,7 @@
 # WinGet-Wrapper  
-A PowerShell script to install/manage applications using WinGet - Common use case include InTune, and other endpoint management products.
+PowerShell Scripts to install/manage applications using WinGet - Common use case include InTune, and other endpoint management products.
 Detection script automatically check local installed version against latest winget available version or a defined fixed target version.
+Easily import finished applications including WinGet metadata using WinGet-WrapperImportFromCSV.ps1 script
 
 * Dynamically finds the WinGet directory to be used under System Context.
 * Kill selected process before WinGet command
