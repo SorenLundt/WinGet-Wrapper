@@ -21,7 +21,7 @@ System Context is not possible by using "winget" as the .exe location must be fo
 Newer Windows OS build that includes the WinGet natively in the OS   
 Windows 10 20H2 or newer should be enough
 Powershell 5.1
-WinGet-WrapperImportFromCSV.ps1 requires module "IntuneWin32App"  # https://github.com/MSEndpointMgr/IntuneWin32App
+WinGet-WrapperImportFromCSV.ps1 automatically installs required module "IntuneWin32App" (github.com/MSEndpointMgr/IntuneWin32App)
 
 ## WinGet-Wrapper.ps1
 ![image](https://github.com/SorenLundt/WinGet-Wrapper/assets/127216441/4220b44b-7f96-4fb1-84ec-ce416f6f622c)
@@ -52,20 +52,21 @@ Package content is stored under Packages\Package.ID-Context-UpdateOnly-UserName-
 
 ## Usage Import from CSV (InTune)
 Open the sample CSV file WinGet-WrapperImportFromCSV.csv and add any WinGet Package IDs to import (Case Sensitive)
-Columns:
-PackageID = Exact PackageID (Required)<br>
-Context = Which context the Win32App is run under (Machine or User) (Required)<br>
-AcceptNewerVersion = Allows newer installed version locally than specified (Set to 0 or 1)(Required)<br>
-UpdateOnly = Update package only. Application will only update if application is already installed (Set to 0 or 1)(Required)<br>
-TargetVersion = Specfic version of the application. If not set, the package will always be the latest version <br>
-StopProcessInstall = Kill a specific process (Stop-process) before installation (.exe should not be defined) Skips any error automatically.<br>
-StopProcessUninstall = Kill a specific process (Stop-process) before uninstallation (.exe should not be defined) Skips any error automatically.<br>
-PreScriptInstall = Run powershell script before installation<br>
-PostScript = Run powershell script after installation<br>
-PreScriptUninstall = Run powershell script before uninstallation<br>
-PostScriptUninstall = Run powershell script after uninstallation<br>
-CustomArgumentListInstall = Custom Arguments passsed to WinGet (default: install --exact --id $($row.PackageID) --silent --accept-package-agreements --accept-source-agreements --scope $($row.Context)<br>
-CustomArgumentListUninstall = Custom Arguments passsed to WinGet (default: uninstall --exact --id $($row.PackageID) --silent --accept-source-agreements --scope $($row.Context)<br>
+
+#### Columns:
+* PackageID = Exact PackageID (Required)<br>
+* Context = Which context the Win32App is run under (Machine or User) (Required)<br>
+* AcceptNewerVersion = Allows newer installed version locally than specified (Set to 0 or 1)(Required)<br>
+* UpdateOnly = Update package only. Application will only update if application is already installed (Set to 0 or 1)(Required)<br>
+* TargetVersion = Specfic version of the application. If not set, the package will always be the latest version <br>
+* StopProcessInstall = Kill a specific process (Stop-process) before installation (.exe should not be defined)<br>
+* StopProcessUninstall = Kill a specific process (Stop-process) before uninstallation (.exe should not be defined)<br>
+* PreScriptInstall = Run powershell script before installation<br>
+* PostScript = Run powershell script after installation<br>
+* PreScriptUninstall = Run powershell script before uninstallation<br>
+* PostScriptUninstall = Run powershell script after uninstallation<br>
+* CustomArgumentListInstall = Arguments passsed to WinGet (default: install --exact --id PackageID --silent --accept-package-agreements --accept-source-agreements --scope Context<br>
+* CustomArgumentListUninstall = Arguments passsed to WinGet (default: uninstall --exact --id PackageID --silent --accept-source-agreements --scope Context<br>
 #### Usage:
 >WinGet-WrapperImportFromCSV.ps1 -TenantID company.onmicrosoft.com -csvFile WinGet-WrapperImportFromCSV.csv -SkipConfirmation
 
