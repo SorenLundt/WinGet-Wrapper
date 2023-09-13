@@ -11,6 +11,7 @@ Easily import finished applications including WinGet metadata using WinGet-Wrapp
 * Logs to $env:ProgramData\WinGet-WrapperLogs (Usually C:\ProgramData\WinGet-WrapperLogs)
 * Dynamically detect if running in user or system context
 * Performs automatic cleanup of log files older than 60 days.
+* Directly import WinGet packages to InTune
 
 ## Background / Why?
 WinGet have a few limitations in terms of automation and is not integrated with common endpoints management products.  
@@ -41,7 +42,32 @@ Outputs either "Installed" or "Not Installed"
 
 ![image](https://github.com/SorenLundt/WinGet-Wrapper/assets/127216441/b8cd24fd-da34-4e1c-aeb2-0627717e1244)
 
-## Usage (InTune)
+## WinGet-WrapperImportFromCSV.ps1
+Imports packages from WinGet to InTune (incuding available WinGet package metadata)
+Package content is stored under Packages\Package.ID-Context-UpdateOnly-UserName-yyyy-mm-dd-hhssmm
+
+![image](https://github.com/SorenLundt/WinGet-Wrapper/assets/127216441/c626ed5b-80eb-4d56-8476-605349356ffa)
+
+## Usage Import from CSV (InTune)
+Open the sample CSV file WinGet-WrapperImportFromCSV.csv and add any WinGet Package IDs to import (Case Sensitive)
+Columns:
+PackageID = Exact PackageID (Required)<br>
+Context = Which context the Win32App is run under (Machine or User) (Required)<br>
+AcceptNewerVersion = Allows newer installed version locally than specified (Set to 0 or 1)(Required)<br>
+UpdateOnly = Update package only. Application will only update if application is already installed (Set to 0 or 1)(Required)<br>
+TargetVersion = Specfic version of the application. If not set, the package will always be the latest version <br>
+StopProcessInstall = Kill a specific process (Stop-process) before installation (.exe should not be defined) Skips any error automatically.<br>
+StopProcessUninstall = Kill a specific process (Stop-process) before uninstallation (.exe should not be defined) Skips any error automatically.<br>
+PreScriptInstall = Run powershell script before installation<br>
+PostScript = Run powershell script after installation<br>
+PreScriptUninstall = Run powershell script before uninstallation<br>
+PostScriptUninstall = Run powershell script after uninstallation<br>
+CustomArgumentListInstall = Custom Arguments passsed to WinGet (default: install --exact --id $($row.PackageID) --silent --accept-package-agreements --accept-source-agreements --scope $($row.Context)<br>
+CustomArgumentListUninstall = Custom Arguments passsed to WinGet (default: uninstall --exact --id $($row.PackageID) --silent --accept-source-agreements --scope $($row.Context)<br>
+#### Usage:
+>WinGet-WrapperImportFromCSV.ps1 -TenantID company.onmicrosoft.com -csvFile WinGet-WrapperImportFromCSV.csv -SkipConfirmation
+
+## Usage Manual Import (InTune)
 **Application Installation**
 
 In InTune create an Windows app (Win32) and upload WinGet-Wrapper.InTuneWin as the package file.  
