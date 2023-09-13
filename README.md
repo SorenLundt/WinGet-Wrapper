@@ -20,6 +20,8 @@ System Context is not possible by using "winget" as the .exe location must be fo
 ## Requirements
 Newer Windows OS build that includes the WinGet natively in the OS   
 Windows 10 20H2 or newer should be enough
+Powershell 5.1
+WinGet-WrapperImportFromCSV.ps1 requires module "IntuneWin32App"  # https://github.com/MSEndpointMgr/IntuneWin32App
 
 ## WinGet-Wrapper.ps1
 ![image](https://github.com/SorenLundt/WinGet-Wrapper/assets/127216441/4220b44b-7f96-4fb1-84ec-ce416f6f622c)
