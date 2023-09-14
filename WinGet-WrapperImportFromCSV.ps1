@@ -325,7 +325,7 @@ else {
 }
 
 # Build install commandline
-$InstallCommandLine = "Powershell.exe -NoLogo -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File WinGet-Wrapper.ps1 -PackageName "+[char]34+"$($row.PackageID) -ArgumentList "+[char]34+"$ArgumentListInstall"+[char]34
+$InstallCommandLine = "Powershell.exe -NoLogo -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File WinGet-Wrapper.ps1 -PackageName $($row.PackageID) -ArgumentList "+[char]34+"$ArgumentListInstall"+[char]34
 if ($row.StopProcessInstall -ne $null -and $row.StopProcessInstall -ne ""){
     $InstallCommandLine += " -StopProcess '$($row.StopProcessInstall)'"
 }
@@ -338,7 +338,7 @@ if ($row.PostScriptInstall -ne $null -and $row.PostScriptInstall -ne "") {
 }
 
 # Build uninstall commandline
-$UninstallCommandLine = "Powershell.exe -NoLogo -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File WinGet-Wrapper.ps1 -PackageName "+[char]34+"$($row.PackageID) -ArgumentList "+[char]34+"$ArgumentListUninstall"+[char]34
+$UninstallCommandLine = "Powershell.exe -NoLogo -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File WinGet-Wrapper.ps1 -PackageName $($row.PackageID) -ArgumentList "+[char]34+"$ArgumentListUninstall"+[char]34
 if ($row.StopProcessUninstall -ne $null -and $row.StopProcessUninstall -ne ""){
     $UninstallCommandLine += " -StopProcess '$($row.StopProcessUninstall)'"
 }
