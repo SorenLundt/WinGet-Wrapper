@@ -17,6 +17,7 @@
 #
 # Version History
 # Version 1.0 - 12-09-2023 SorenLundt - Initial Version
+# Version 1.1 - 14-09-2023 SorenLundt - Replaced ' with [char]34 (Quotation mark)  InTune does not handle ' well
 
 #Parameters
 Param (
@@ -208,7 +209,7 @@ $PackageIDout = $PackageIDOutLines -join "`r`n"
 
 if ($PackageIDOutLines -notcontains "No package found matching input criteria.") {
     if ($PackageIDOutLines -notcontains "  No applicable installer found; see logs for more details.") {
-        Write-Host "--- PACKAGE INFORMATION ---"
+        Write-Host "--- WINGET PACKAGE INFORMATION ---"
         Write-Host $PackageIDOut
         Write-Host "--------------------------"
         if (!$SkipConfirmation) {
@@ -227,8 +228,7 @@ if ($PackageIDOutLines -notcontains "No package found matching input criteria.")
     return
 }
 
-write-host ""
-Write-Host "--- Scrape WinGet Details $($row.PackageID) ---"
+
 #Scrape Winget package details to use in InTune from $PackageIDOut
 #Scrape "Found " Scrape all line from after this
 #Scrape "Description"  Regex.. Find "Description: " Scrape all line from after this
@@ -266,6 +266,8 @@ foreach ($variable in $variables) {
 }
 
 # Display the extracted variables
+write-host ""
+Write-Host "--- WinGet Scraped Metadata $($row.PackageID) ---"
 Write-Host "PackageName: $PackageName"
 Write-Host "Version: $Version"
 Write-Host "Publisher: $Publisher"
@@ -283,6 +285,7 @@ Write-Host "InstallerLocale: $InstallerLocale"
 Write-Host "InstallerURL: $InstallerURL"
 Write-Host "InstallerSHA256: $InstallerSHA256"
 Write-Host ""
+Write-Host "--------------------------"
 
 # Build package details to prepare InTune import
 $PackageName += " ($($row.Context))"
@@ -322,7 +325,7 @@ else {
 }
 
 # Build install commandline
-$InstallCommandLine = "Powershell.exe -NoLogo -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File WinGet-Wrapper.ps1 -PackageName '$($row.PackageID)' -ArgumentList '$ArgumentListInstall'"
+$InstallCommandLine = "Powershell.exe -NoLogo -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File WinGet-Wrapper.ps1 -PackageName "+[char]34+"$($row.PackageID) -ArgumentList "+[char]34+"$ArgumentListInstall"+[char]34
 if ($row.StopProcessInstall -ne $null -and $row.StopProcessInstall -ne ""){
     $InstallCommandLine += " -StopProcess '$($row.StopProcessInstall)'"
 }
@@ -335,7 +338,7 @@ if ($row.PostScriptInstall -ne $null -and $row.PostScriptInstall -ne "") {
 }
 
 # Build uninstall commandline
-$UninstallCommandLine = "Powershell.exe -NoLogo -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File WinGet-Wrapper.ps1 -PackageName '$($row.PackageID)' -ArgumentList '$ArgumentListUninstall'"
+$UninstallCommandLine = "Powershell.exe -NoLogo -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File WinGet-Wrapper.ps1 -PackageName "+[char]34+"$($row.PackageID) -ArgumentList "+[char]34+"$ArgumentListUninstall"+[char]34
 if ($row.StopProcessUninstall -ne $null -and $row.StopProcessUninstall -ne ""){
     $UninstallCommandLine += " -StopProcess '$($row.StopProcessUninstall)'"
 }
@@ -379,14 +382,14 @@ $packagesDirectory = Join-Path -Path $currentDirectory -ChildPath "Packages"
 
 # Check if the "packages" directory exists, and if not, create it
 if (-Not (Test-Path -Path $packagesDirectory)) {
-    New-Item -Path $packagesDirectory -ItemType Directory
+    New-Item -Path $packagesDirectory -ItemType Directory | Out-Null
 }
 
 # Combine the "Packages" directory path with the folder name to create the full path
 $PackageFolderPath = Join-Path -Path $packagesDirectory -ChildPath $folderName
 
 # Create the subfolder with the desired name
-New-Item -Path $PackageFolderPath -ItemType Directory
+New-Item -Path $PackageFolderPath -ItemType Directory | Out-Null
 
 
 
@@ -488,7 +491,7 @@ elseif ($row.Context -in @("User", "user")) {
 try {
 $intuneWinFolderPath = Join-Path -Path $PackageFolderPath -ChildPath "InTuneWin"
 if (-not (Test-Path -Path $intuneWinFolderPath -PathType Container)) {
-    New-Item -Path $intuneWinFolderPath -ItemType Directory
+    New-Item -Path $intuneWinFolderPath -ItemType Directory | Out-Null
 }
 # Copy WinGet-Wrapper.ps1
 Copy-Item -Path "WinGet-Wrapper.ps1" -Destination $intuneWinFolderPath -ErrorAction Stop
@@ -516,9 +519,9 @@ catch {
 }
 
 # Build WinGet-Wrapper.intunewin
+Write-Host "Building WinGet-Wrapper.InTuneWin file"
 try {
 [string]$toolargs = "-c ""$($intuneWinFolderPath)"" -s ""WinGet-Wrapper.ps1"" -o ""$($PackageFolderPath)"" -q"
-write-host $toolargs
 (Start-Process -FilePath "$PSScriptRoot\IntuneWinAppUtil.exe" -ArgumentList $toolargs -PassThru:$true -ErrorAction Stop -NoNewWindow).WaitForExit()
     
     # Check that IntuneWin was created
