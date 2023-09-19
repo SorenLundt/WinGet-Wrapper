@@ -1,5 +1,5 @@
 # WinGet-Wrapper  
-PowerShell Scripts to deploy and bulk import winget packages to InTune including metadata.
+PowerShell Scripts to deploy and bulk import WinGet packages to InTune including metadata.<br>
 Automatically detect latest version using dynamic detection script. 
 Detection script checks local installed version against latest winget available version or a defined fixed target version.
 Easily bulk import WinGet packages to InTune including WinGet package metadata using WinGet-WrapperImportFromCSV.ps1
