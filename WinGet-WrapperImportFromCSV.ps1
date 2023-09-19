@@ -70,7 +70,7 @@ foreach ($row in $data){
 write-host ""
 
 #Connect to Intune
-try{
+try{  
 Connect-MSIntuneGraph -TenantID "$TenantID" -Interactive
 }
 catch {
@@ -221,7 +221,11 @@ if ($PackageIDOutLines -notcontains "No package found matching input criteria.")
     } else {
         # Second condition not met
         Write-Host "Applicable installer not found for $($row.Context) context" -ForegroundColor "Red"
-        return
+        $imported = $False
+        $row | Add-Member -MemberType NoteProperty -Name "Imported" -Value $imported  #Write imported status to $row
+        $errortext = "Applicable installer not found for $($row.Context) context"
+        $row | Add-Member -MemberType NoteProperty -Name "ErrorText" -Value $errortext  #Write errortext to $row
+        continue
     }
 } else {
     Write-Host "Package $($row.PackageID) not found using winget" -ForegroundColor "Red"
@@ -573,15 +577,17 @@ if ($Row.UpdateOnly -eq $True) {
 } else {
 }
 
-Write-Host "Checking if Application '$PackageName' already exists in Intune"
+Write-Host "Checking if application already exists in Intune - $PackageName"
     # Get the Intune Win32 apps with the specified display name
     $CheckIntuneAppExists = Get-IntuneWin32App -DisplayName "$PackageName" -WarningAction SilentlyContinue
 
     # Check if any matching applications were found
     if ($CheckIntuneAppExists.Count -gt 0) {
-        Write-Host "ERROR: Application with the same name ($PackageName) already exists in Intune. Could not import $($Row.PackageID)" -ForegroundColor "Red"
+        Write-Host "ERROR: Application with the same name already exists in Intune. Could not import - $PackageName" -ForegroundColor "Red"
         $imported = $False
         $row | Add-Member -MemberType NoteProperty -Name "Imported" -Value $imported  #Write imported status to $row
+        $errortext = "Already exists in InTune"
+        $row | Add-Member -MemberType NoteProperty -Name "ErrorText" -Value $errortext  #Write errortext to $row
         continue
     }
     else {
@@ -599,6 +605,8 @@ catch {
     Write-Host "An error occurred: $_.Exception.Message" -ForeGroundColor "Red"
     $imported = $False
     $row | Add-Member -MemberType NoteProperty -Name "Imported" -Value $imported  #Write imported status to $row
+    $errortext = "Error Importing: $_.Exception.Message"
+    $row | Add-Member -MemberType NoteProperty -Name "ErrorText" -Value $errortext  #Write errortext to $row
     continue
 }
 
@@ -611,6 +619,8 @@ $row | Add-Member -MemberType NoteProperty -Name "Imported" -Value $imported  #W
         #Failed
         $imported = $False
         $row | Add-Member -MemberType NoteProperty -Name "Imported" -Value $imported  #Write imported status to $row
+        $errortext = "Unknown Error: $_.Exception.Message"
+        $row | Add-Member -MemberType NoteProperty -Name "ErrorText" -Value $errortext  #Write errortext to $row
 
     }
 }
@@ -634,6 +644,6 @@ foreach ($row in $data) {
         $textColor = "Red"  # Change to red if Imported is False
         $importedtext = "Failed"
     }
-    $formattedText = "Imported:$ImportedText PackageID:$($row.PackageID) TargetVersion: $($row.TargetVersion) Context:$($row.Context) UpdateOnly: $($row.UpdateOnly) AcceptNewerVersion: $($row.AcceptNewerVersion)"
+    $formattedText = "Imported:$ImportedText PackageID:$($row.PackageID) TargetVersion: $($row.TargetVersion) Context:$($row.Context) UpdateOnly: $($row.UpdateOnly) AcceptNewerVersion: $($row.AcceptNewerVersion) ErrorText: $($row.ErrorText)"
     Write-Host $formattedText -ForegroundColor $textColor
 }
