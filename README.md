@@ -38,18 +38,20 @@ Can be setup to accept newer installed version locally $AcceptNewerVersion<br>
 ## WinGet-WrapperRequirements.ps1
 Checks if application is detected locally. If not detected will not attempt update/install<br>
 To be used when only wanting to update if application is already installed. (Update Only)<br>
-
 ![image](https://github.com/SorenLundt/WinGet-Wrapper/assets/127216441/b5af0ddd-6700-46cf-8907-33dbd0f8e930)
 
 Outputs either "Installed" or "Not Installed"<br>
-
 ![image](https://github.com/SorenLundt/WinGet-Wrapper/assets/127216441/b8cd24fd-da34-4e1c-aeb2-0627717e1244)
 
 ## WinGet-WrapperImportFromCSV.ps1
 Imports packages from WinGet to InTune (incuding available WinGet package metadata)<br>
 Package content is stored under Packages\Package.ID-Context-UpdateOnly-UserName-yyyy-mm-dd-hhssmm<br>
+![image](https://github.com/SorenLundt/WinGet-Wrapper/assets/127216441/c626ed5b-80eb-4d56-8476-605349356ffa)<br>
+<br>
+ #### Results screen:
+ ![image](https://github.com/SorenLundt/WinGet-Wrapper/assets/127216441/b8d5d89a-de8f-4047-9570-d65451157244)
 
-![image](https://github.com/SorenLundt/WinGet-Wrapper/assets/127216441/c626ed5b-80eb-4d56-8476-605349356ffa)
+
 
 ## Usage Import from CSV (InTune)
 Open the sample CSV file WinGet-WrapperImportFromCSV.csv and add any WinGet Package IDs to import (Case Sensitive)<br>
