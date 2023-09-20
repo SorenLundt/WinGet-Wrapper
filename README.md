@@ -12,7 +12,7 @@ Bulk import WinGet packages to InTune including WinGet package metadata using Wi
 * Logs to $env:ProgramData\WinGet-WrapperLogs (Usually C:\ProgramData\WinGet-WrapperLogs)<br>
 * Dynamically detect if running in user or system context<br>
 * Performs automatic cleanup of log files older than 60 days.<br>
-* Directly import WinGet packages to InTune including WinGet package metadata<br>
+* Directly import and deploy WinGet packages to InTune including WinGet package metadata<br>
 
 ## Background / Why?
 WinGet have a few limitations in terms of automation and is not integrated with common endpoints management products.  <br>
@@ -46,6 +46,7 @@ Outputs either "Installed" or "Not Installed"<br>
 ## WinGet-WrapperImportFromCSV.ps1
 Imports packages from WinGet to InTune (incuding available WinGet package metadata)<br>
 Package content is stored under Packages\Package.ID-Context-UpdateOnly-UserName-yyyy-mm-dd-hhssmm<br>
+Create deployment using csv columns: InstallIntent, Notification, GroupID
 ![image](https://github.com/SorenLundt/WinGet-Wrapper/assets/127216441/c626ed5b-80eb-4d56-8476-605349356ffa)<br>
 <br>
  #### Results screen:
@@ -70,6 +71,9 @@ Open the sample CSV file WinGet-WrapperImportFromCSV.csv and add any WinGet Pack
 * PostScriptUninstall = Run powershell script after uninstallation<br>
 * CustomArgumentListInstall = Arguments passsed to WinGet (default: install --exact --id PackageID --silent --accept-package-agreements --accept-source-agreements --scope Context<br>
 * CustomArgumentListUninstall = Arguments passsed to WinGet (default: uninstall --exact --id PackageID --silent --accept-source-agreements --scope Context<br>
+* InstallIntent = Available or Required deployment <br>
+* Notification = Notification level on deployment - Valid values: showAll, showReboot, hideAll<br>
+* GroupID = InTune GroupID to deploy package to<br>
 #### Usage:
 >WinGet-WrapperImportFromCSV.ps1 -TenantID company.onmicrosoft.com -csvFile WinGet-WrapperImportFromCSV.csv -SkipConfirmation
 
