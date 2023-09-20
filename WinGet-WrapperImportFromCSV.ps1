@@ -10,7 +10,7 @@
 # SkipConfirmation = Skips confirmation for each package
 #
 # csvFile columns:
-# PackageID,Context,AcceptNewerVersion,UpdateOnly,TargetVersion,StopProcessInstall,StopProcessUninstall,PreScriptInstall,PostScriptInstall,PreScriptUninstall,PostScriptUninstall,CustomArgumentListInstall,CustomArgumentListUninstall
+# PackageID,Context,AcceptNewerVersion,UpdateOnly,TargetVersion,StopProcessInstall,StopProcessUninstall,PreScriptInstall,PostScriptInstall,PreScriptUninstall,PostScriptUninstall,CustomArgumentListInstall,CustomArgumentListUninstall,InstallIntent,Notification,GroupID
 #
 # Requirements:
 # Requires Script files and IntuneWinAppUtil.exe to be present in script directory
@@ -18,6 +18,7 @@
 # Version History
 # Version 1.0 - 12-09-2023 SorenLundt - Initial Version
 # Version 1.1 - 14-09-2023 SorenLundt - Replaced ' with [char]34 (Quotation mark)  InTune does not handle ' well
+# Version 1.2 - 20-09-2023 SorenLundt - Added possiblity to deploy application once imported. Set via CSV file (InstallIntent, Notification, GroupID)
 
 #Parameters
 Param (
@@ -37,6 +38,10 @@ Param (
 Install-Module -Name "IntuneWin32App"  # https://github.com/MSEndpointMgr/IntuneWin32App
 Import-Module -Name "IntuneWin32App"
 
+Install-Module -Name "Microsoft.Graph.Intune"
+Import-Module -Name "Microsoft.Graph.Intune"
+
+
 # Welcome greeting
 Write-host " "
 Write-host " "
@@ -55,7 +60,7 @@ if (Test-Path -Path $csvFile -PathType Leaf) {
 }
 
 # Import the CSV file with custom headers
-$data = Import-Csv -Path $csvFile -Header "PackageID", "Context", "AcceptNewerVersion", "UpdateOnly", "TargetVersion", "StopProcessInstall", "StopProcessUninstall", "PreScriptInstall", "PostScriptInstall", "PreScriptUninstall", "PostScriptUninstall", "CustomArgumentListInstall", "CustomArgumentListUninstall" | Select-Object -Skip 1
+$data = Import-Csv -Path $csvFile -Header "PackageID", "Context", "AcceptNewerVersion", "UpdateOnly", "TargetVersion", "StopProcessInstall", "StopProcessUninstall", "PreScriptInstall", "PostScriptInstall", "PreScriptUninstall", "PostScriptUninstall", "CustomArgumentListInstall", "CustomArgumentListUninstall", "InstallIntent", "Notification", "GroupID" | Select-Object -Skip 1
 
 # Convert "AcceptNewerVersion" and "UpdateOnly" columns to Boolean values
 $data = $data | ForEach-Object {
@@ -63,11 +68,19 @@ $data = $data | ForEach-Object {
     $_.UpdateOnly = [bool]($_.UpdateOnly -as [int])
     $_
 }
-Write-host "-- Packagelist to Import --"
+Write-host "-- IMPORT LIST --"
 foreach ($row in $data){
-    Write-Host "$($row.PackageID)"
+    Write-Host "IMPORT PackageID:$($row.PackageID) - Context:$($row.Context) - UpdateOnly:$($row.UpdateOnly) - TargetVersion:$($row.TargetVersion)" -ForegroundColor Blue
 }
 write-host ""
+
+Write-host "-- DEPLOY LIST --"
+foreach ($row in $data){
+    if ($null = $row.GroupID -or $row.GroupID -ne "")
+    {
+        write-host "DEPLOY PackageID:$($row.PackageID) GroupID:$($row.GroupID) InstallIntent:$($row.InstallIntent) Notification:$($row.Notification)" -ForegroundColor Blue
+    }
+}
 
 #Connect to Intune
 try{  
@@ -116,6 +129,32 @@ if ($row.AcceptNewerVersion -ne $True -and $row.AcceptNewerVersion -ne $False)
 {
     Write-Host "Invalid AcceptNewerVersion setting $($row.AcceptNewerVersion) for package $($row.PackageID) found in CSV. Please review the CSV. Exiting.." -ForegroundColor "Red"
     break
+}
+
+#Check InstallIntent is valid
+if ($null -ne $row.InstallIntent -and $row.InstallIntent -ne "") {
+    if ($row.InstallIntent -notcontains "Required" -and $row.InstallIntent -notcontains "required" -and $row.InstallIntent -notcontains "Available" -and $row.InstallIntent -notcontains "available")
+    {
+        Write-Host "Invalid InstallIntent setting $($row.InstallIntent) for package $($row.PackageID) found in CSV. Please review CSV (Use Available or Required) Exiting.." -ForegroundColor "Red"
+        break
+    }
+}
+
+#Check Notification is valid
+if ($null -ne $row.Notification -and $row.Notification -ne "") {
+    $validNotificationValues = "showAll", "showReboot", "hideAll"
+    if ($validNotificationValues -notcontains $row.Notification.ToLower()) {
+        Write-Host "Invalid Notification setting $($row.Notification) for package $($row.PackageID) found in CSV. Please review CSV (Use showAll, showReboot, or hideAll) Exiting.." -ForegroundColor "Red"
+        break
+    }
+}
+
+#Check GroupID is set if InstallIntent is specified
+if ($null -ne $row.InstallIntent -and $row.InstallIntent -ne "") {
+    if ($row.GroupID -eq $null -or $row.GroupID -eq "") {
+    Write-Host "Invalid GroupID setting $($row.GroupID) for package $($row.PackageID) found in CSV. Please review CSV. If InstallIntent is set, GroupID must be set too!"
+    break
+    }
 }
 
 #Check UpdateOnly is true or false
@@ -481,7 +520,6 @@ else {
     $VersionInfo = "Latest"
 }
 
-
 #Convert Context
 if ($row.Context -in @("Machine", "machine")) {
     $ContextConverted = "System"
@@ -597,7 +635,9 @@ Write-Host "Checking if application already exists in Intune - $PackageName"
 #Import application to InTune
 try {
     Write-Host "Importing application '$PackageName' to InTune"
-    Add-IntuneWin32App @AddInTuneWin32AppArguments
+    $AppImport = Add-IntuneWin32App @AddInTuneWin32AppArguments -WarningAction Continue -ErrorAction Continue
+    $AppID = $AppImport.ID
+    $row | Add-Member -MemberType NoteProperty -Name "AppID" -Value $AppID #Write AppID to $row
     Write-Host "Imported application '$PackageName' to InTune" -ForeGroundColor "Green"
     $imported = $True
 }
@@ -608,6 +648,30 @@ catch {
     $errortext = "Error Importing: $_.Exception.Message"
     $row | Add-Member -MemberType NoteProperty -Name "ErrorText" -Value $errortext  #Write errortext to $row
     continue
+}
+
+#If more packages to import, wait 30 seconds to avoid creating issue (InTune seems to maybe have a throttle in place..)
+    # Check if there are more than 2 rows in $data
+    if ($data.Count -gt 2) {
+        write-host "Waiting 30s before importing next package..InTune Throttling"
+        Start-Sleep -Seconds 30
+    }
+
+# Deploy Application if set - Install Intent "Required"
+try {
+    if ($Row.InstallIntent -contains "Required" -and ($null -ne $Row.GroupID -and $Row.GroupID -ne "")) {
+        Add-IntuneWin32AppAssignmentGroup -Include -ID $Row.AppID -GroupID $Row.GroupID -Intent $row.InstallIntent -Notification $row.Notification -ErrorAction continue
+        Write-Host "Deployed AppID:$($Row.AppID) to $($Row.GroupID)"
+    }
+    
+    # Deploy Application if set - Install Intent "Available"
+    if ($Row.InstallIntent -eq "Available" -and ($null -ne $Row.GroupID -and $Row.GroupID -ne "")) {
+        Add-IntuneWin32AppAssignmentGroup -Include -ID $Row.AppID -GroupID $Row.GroupID -Intent $row.InstallIntent -Notification $row.Notification -ErrorAction continue
+        Write-Host "Deployed AppID:$($Row.AppID) to $($Row.GroupID)"
+    }
+}
+ catch {
+    Write-Host "Error deploying $($Row.PackageID) : $_"
 }
 
 #Success
@@ -623,19 +687,13 @@ $row | Add-Member -MemberType NoteProperty -Name "Imported" -Value $imported  #W
         $row | Add-Member -MemberType NoteProperty -Name "ErrorText" -Value $errortext  #Write errortext to $row
 
     }
-}
 
-#If more packages to import, wait 30 seconds to avoid creating issue (InTune seems to maybe have a throttle in place..)
-    # Check if there are more than 2 rows in $data
-    if ($data.Count -gt 2) {
-        write-host "Waiting 30s before importing next package..InTune Throttling"
-        Start-Sleep -Seconds 30
-    }
+}
 }
 ###### END FOREACH ######
 
 #Write Results
-Write-host "---- RESULTS ----"
+Write-host "---- RESULTS Package Creation ----"
 foreach ($row in $data) {
     $importedStatus = $row.Imported
     $textColor = "Green"  # Default to green
@@ -644,6 +702,12 @@ foreach ($row in $data) {
         $textColor = "Red"  # Change to red if Imported is False
         $importedtext = "Failed"
     }
-    $formattedText = "Imported:$ImportedText PackageID:$($row.PackageID) TargetVersion: $($row.TargetVersion) Context:$($row.Context) UpdateOnly: $($row.UpdateOnly) AcceptNewerVersion: $($row.AcceptNewerVersion) ErrorText: $($row.ErrorText)"
+    $formattedText = "IMPORTED:$ImportedText PackageID:$($row.PackageID) AppID:$($row.AppID) TargetVersion:$($row.TargetVersion) Context:$($row.Context) UpdateOnly: $($row.UpdateOnly) AcceptNewerVersion: $($row.AcceptNewerVersion) ErrorText: $($row.ErrorText)"
     Write-Host $formattedText -ForegroundColor $textColor
+
+    # If deployed also show these results
+    if ($null = $row.GroupID -or $row.GroupID -ne "")
+    {
+    Write-host "> DEPLOYED:$($row.PackageID) AppID:$($row.AppID) ----> GroupID:$($row.GroupID) InstallIntent:$($row.InstallIntent) Notification:$($row.Notification)" -ForegroundColor $textColor
+    }
 }
