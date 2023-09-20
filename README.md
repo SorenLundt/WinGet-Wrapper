@@ -54,11 +54,12 @@ Create deployment using csv columns: InstallIntent, Notification, GroupID<br>
 Open the sample CSV file WinGet-WrapperImportFromCSV.csv and add any WinGet Package IDs to import (Case Sensitive)<br>
 #### Usage:
 >WinGet-WrapperImportFromCSV.ps1 -TenantID company.onmicrosoft.com -csvFile WinGet-WrapperImportFromCSV.csv -SkipConfirmation
-
+#### Process:
 ![image](https://github.com/SorenLundt/WinGet-Wrapper/assets/127216441/297ddb07-eeac-41c7-a9ec-9656727984f6)
-
 <br>
 #### Results:
+![image](https://github.com/SorenLundt/WinGet-Wrapper/assets/127216441/ca57c9d4-0ec7-4514-8694-7160f6356b5e)
+
 
 #### Columns:
 * PackageID = Exact PackageID (Required)<br>
