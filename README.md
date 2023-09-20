@@ -49,10 +49,6 @@ Package content is stored under Packages\Package.ID-Context-UpdateOnly-UserName-
 Create deployment using csv columns: InstallIntent, Notification, GroupID<br>
 ![image](https://github.com/SorenLundt/WinGet-Wrapper/assets/127216441/c626ed5b-80eb-4d56-8476-605349356ffa)<br>
 <br>
- #### Results screen:
- ![image](https://github.com/SorenLundt/WinGet-Wrapper/assets/127216441/b8d5d89a-de8f-4047-9570-d65451157244)
-
-
 
 ## Usage Import from CSV (InTune)
 Open the sample CSV file WinGet-WrapperImportFromCSV.csv and add any WinGet Package IDs to import (Case Sensitive)<br>
