@@ -21,6 +21,8 @@
 # Version 1.2 - 20-09-2023 SorenLundt - Added possiblity to deploy application once imported. Set via CSV file (InstallIntent, Notification, GroupID)
 # Version 1.3 - 20-09-2023 SorenLundt - If -SkipConfirmation set will skip the entire WinGet package output section
 # Version 1.4 - 27-09-2023 SorenLundt - Added -OverWrite which will delete apps with the same display name
+# Version 1.5 - 27-09-2023 SorenLundt - Removed -OverWrite feature - Requires more work.. Some bugs
+
 
 #Parameters
 Param (
@@ -33,10 +35,7 @@ Param (
     [string]$TenantID,
 
     #Skips confirmation for each package before import
-    [Switch]$SkipConfirmation = $false,
-
-    #Deletes any apps from InTune with same display name before importing
-    [Switch]$Overwrite = $false
+    [Switch]$SkipConfirmation = $false
 )
 
 # Install and load required modules
@@ -621,6 +620,8 @@ if ($Row.UpdateOnly -eq $True) {
 }
 
 # If overwrite enabled , remove win32app from intune before importing
+# Disabled section. Needs more work.
+<#
 if ($Overwrite -eq $True) {
     try{
     write-host "Overwrite enabled - Attempting to remove Win32App if it already exists in InTune - $PackageName "
@@ -651,6 +652,7 @@ if ($Overwrite -eq $True) {
     }
 
 }
+#>
     
 
 Write-Host "Checking if application already exists in Intune - $PackageName"
