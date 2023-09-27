@@ -47,7 +47,7 @@ Outputs either "Installed" or "Not Installed"<br><br>
 Imports packages from WinGet to InTune (incuding available WinGet package metadata)<br>
 Package content is stored under Packages\Package.ID-Context-UpdateOnly-UserName-yyyy-mm-dd-hhssmm<br>
 Create deployment using csv columns: InstallIntent, Notification, GroupID<br><br>
-![image](https://github.com/SorenLundt/WinGet-Wrapper/assets/127216441/9e48c3b9-4103-4b2a-a0f1-70261a3855a2)
+![image](https://github.com/SorenLundt/WinGet-Wrapper/assets/127216441/dde433b9-81e1-484b-8ee1-71ac02d68441)
 <br>
 ## Usage: Import from CSV (InTune)
 Open the sample CSV file WinGet-WrapperImportFromCSV.csv and add any WinGet Package IDs to import (Case Sensitive)<br>
