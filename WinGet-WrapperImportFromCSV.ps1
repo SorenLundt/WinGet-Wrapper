@@ -20,6 +20,7 @@
 # Version 1.1 - 14-09-2023 SorenLundt - Replaced ' with [char]34 (Quotation mark)  InTune does not handle ' well
 # Version 1.2 - 20-09-2023 SorenLundt - Added possiblity to deploy application once imported. Set via CSV file (InstallIntent, Notification, GroupID)
 # Version 1.3 - 20-09-2023 SorenLundt - If -SkipConfirmation set will skip the entire WinGet package output section
+# Version 1.4 - 27-09-2023 SorenLundt - Added -OverWrite which will delete apps with the same display name
 
 #Parameters
 Param (
@@ -34,7 +35,7 @@ Param (
     #Skips confirmation for each package before import
     [Switch]$SkipConfirmation = $false,
 
-    #Removes apps from intune with same displayname
+    #Deletes any apps from InTune with same display name before importing
     [Switch]$Overwrite = $false
 )
 
