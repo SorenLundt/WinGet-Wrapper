@@ -19,6 +19,7 @@
 # Version 1.0 - 12-09-2023 SorenLundt - Initial Version
 # Version 1.1 - 14-09-2023 SorenLundt - Replaced ' with [char]34 (Quotation mark)  InTune does not handle ' well
 # Version 1.2 - 20-09-2023 SorenLundt - Added possiblity to deploy application once imported. Set via CSV file (InstallIntent, Notification, GroupID)
+# Version 1.3 - 20-09-2023 SorenLundt - If -SkipConfirmation set will skip the entire WinGet package output section
 
 #Parameters
 Param (
@@ -31,7 +32,10 @@ Param (
     [string]$TenantID,
 
     #Skips confirmation for each package before import
-    [Switch]$SkipConfirmation = $false
+    [Switch]$SkipConfirmation = $false,
+
+    #Removes apps from intune with same displayname
+    [Switch]$Overwrite = $false
 )
 
 # Install and load required modules
@@ -70,7 +74,7 @@ $data = $data | ForEach-Object {
 }
 Write-host "-- IMPORT LIST --"
 foreach ($row in $data){
-    Write-Host "IMPORT PackageID:$($row.PackageID) - Context:$($row.Context) - UpdateOnly:$($row.UpdateOnly) - TargetVersion:$($row.TargetVersion)" -ForegroundColor Blue
+    Write-Host "IMPORT PackageID:$($row.PackageID) - Context:$($row.Context) - UpdateOnly:$($row.UpdateOnly) - TargetVersion:$($row.TargetVersion)" -ForegroundColor Gray
 }
 write-host ""
 
@@ -78,7 +82,7 @@ Write-host "-- DEPLOY LIST --"
 foreach ($row in $data){
     if ($null = $row.GroupID -or $row.GroupID -ne "")
     {
-        write-host "DEPLOY PackageID:$($row.PackageID) GroupID:$($row.GroupID) InstallIntent:$($row.InstallIntent) Notification:$($row.Notification)" -ForegroundColor Blue
+        write-host "DEPLOY PackageID:$($row.PackageID) GroupID:$($row.GroupID) InstallIntent:$($row.InstallIntent) Notification:$($row.Notification)" -ForegroundColor Gray
     }
 }
 
@@ -248,15 +252,15 @@ $PackageIDout = $PackageIDOutLines -join "`r`n"
 
 if ($PackageIDOutLines -notcontains "No package found matching input criteria.") {
     if ($PackageIDOutLines -notcontains "  No applicable installer found; see logs for more details.") {
+        if (!$SkipConfirmation) {
         Write-Host "--- WINGET PACKAGE INFORMATION ---"
         Write-Host $PackageIDOut
         Write-Host "--------------------------"
-        if (!$SkipConfirmation) {
         $confirmation = Read-Host "Confirm the package details above (Y/N)"
         if ($confirmation -eq "N" -or $confirmation -eq "N") {
         break
         }
-        }
+    }
     } else {
         # Second condition not met
         Write-Host "Applicable installer not found for $($row.Context) context" -ForegroundColor "Red"
@@ -615,11 +619,45 @@ if ($Row.UpdateOnly -eq $True) {
 } else {
 }
 
+# If overwrite enabled , remove win32app from intune before importing
+if ($Overwrite -eq $True) {
+    try{
+    write-host "Overwrite enabled - Attempting to remove Win32App if it already exists in InTune - $PackageName "
+    write-host "$packagename"
+    $CheckIntuneAppExists = Get-IntuneWin32App -DisplayName "$PackageName"
+    write-host "627 - $CheckIntuneAppExists"
+    if ($CheckIntuneAppExists.Count -gt 0)
+    {
+    write-host "Package found in InTune "
+    Remove-IntuneWin32App -DisplayName "$PackageName"
+    [int]$NumberOfTimesChecked = 1
+    do {
+        write-host "Checking if Win32App was removed before continuing. Checks: $NumberOfTimesChecked"
+        write-host "635 - $CheckIntuneAppExists"
+        $CheckIntuneAppExists = Get-IntuneWin32App -DisplayName "$PackageName"
+        Start-Sleep 15
+        $NumberOfTimesChecked++
+    } while ($CheckIntuneAppExists.Count -gt 0)
+    }
+}
+    catch {
+        Write-Host "An error occurred: $_.Exception.Message" -ForeGroundColor "Red"
+        $imported = $False
+        $row | Add-Member -MemberType NoteProperty -Name "Imported" -Value $imported  #Write imported status to $row
+        $errortext = "Error Remvoving Win32App: $_.Exception.Message"
+        $row | Add-Member -MemberType NoteProperty -Name "ErrorText" -Value $errortext  #Write errortext to $row
+        continue
+    }
+
+}
+    
+
 Write-Host "Checking if application already exists in Intune - $PackageName"
     # Get the Intune Win32 apps with the specified display name
     $CheckIntuneAppExists = Get-IntuneWin32App -DisplayName "$PackageName" -WarningAction SilentlyContinue
 
     # Check if any matching applications were found
+    write-host "CheckInTuneAppExists.Count = $($CheckIntuneAppExists.Count)"
     if ($CheckIntuneAppExists.Count -gt 0) {
         Write-Host "ERROR: Application with the same name already exists in Intune. Could not import - $PackageName" -ForegroundColor "Red"
         $imported = $False
@@ -650,24 +688,17 @@ catch {
     continue
 }
 
-#If more packages to import, wait 30 seconds to avoid creating issue (InTune seems to maybe have a throttle in place..)
-    # Check if there are more than 2 rows in $data
-    if ($data.Count -gt 2) {
-        write-host "Waiting 30s before importing next package..InTune Throttling"
-        Start-Sleep -Seconds 30
-    }
-
 # Deploy Application if set - Install Intent "Required"
 try {
     if ($Row.InstallIntent -contains "Required" -and ($null -ne $Row.GroupID -and $Row.GroupID -ne "")) {
         Add-IntuneWin32AppAssignmentGroup -Include -ID $Row.AppID -GroupID $Row.GroupID -Intent $row.InstallIntent -Notification $row.Notification -ErrorAction continue
-        Write-Host "Deployed AppID:$($Row.AppID) to $($Row.GroupID)"
+        Write-Host "Deployed AppID:$($Row.AppID) to $($Row.GroupID)" -ForeGroundColor "Green"
     }
     
     # Deploy Application if set - Install Intent "Available"
-    if ($Row.InstallIntent -eq "Available" -and ($null -ne $Row.GroupID -and $Row.GroupID -ne "")) {
+    if ($Row.InstallIntent -contains "Available" -and ($null -ne $Row.GroupID -and $Row.GroupID -ne "")) {
         Add-IntuneWin32AppAssignmentGroup -Include -ID $Row.AppID -GroupID $Row.GroupID -Intent $row.InstallIntent -Notification $row.Notification -ErrorAction continue
-        Write-Host "Deployed AppID:$($Row.AppID) to $($Row.GroupID)"
+        Write-Host "Deployed AppID:$($Row.AppID) to $($Row.GroupID)" -ForeGroundColor "Green"
     }
 }
  catch {
@@ -688,6 +719,13 @@ $row | Add-Member -MemberType NoteProperty -Name "Imported" -Value $imported  #W
 
     }
 
+#If more packages to import, wait 15 seconds to avoid throttling. Microsoft Graph throttling ?
+    # Check if there are more than 2 rows in $data
+    if ($data.Count -gt 2) {
+        write-host "Waiting 15s before importing next package.. (Throttle)"
+        Start-Sleep -Seconds 15
+    }
+
 }
 }
 ###### END FOREACH ######
@@ -702,12 +740,16 @@ foreach ($row in $data) {
         $textColor = "Red"  # Change to red if Imported is False
         $importedtext = "Failed"
     }
+    write-host ""
     $formattedText = "IMPORTED:$ImportedText PackageID:$($row.PackageID) AppID:$($row.AppID) TargetVersion:$($row.TargetVersion) Context:$($row.Context) UpdateOnly: $($row.UpdateOnly) AcceptNewerVersion: $($row.AcceptNewerVersion) ErrorText: $($row.ErrorText)"
     Write-Host $formattedText -ForegroundColor $textColor
 
     # If deployed also show these results
-    if ($null = $row.GroupID -or $row.GroupID -ne "")
-    {
-    Write-host "> DEPLOYED:$($row.PackageID) AppID:$($row.AppID) ----> GroupID:$($row.GroupID) InstallIntent:$($row.InstallIntent) Notification:$($row.Notification)" -ForegroundColor $textColor
+    if ($null = $row.GroupID -or $row.GroupID -ne ""){
+        if ($importedStatus -eq $True)
+        {
+        Write-host "> DEPLOYED:$($row.PackageID) AppID:$($row.AppID) ----> GroupID:$($row.GroupID) InstallIntent:$($row.InstallIntent) Notification:$($row.Notification)" -ForegroundColor $textColor
+        }   
     }
+
 }
