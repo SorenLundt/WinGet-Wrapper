@@ -15,6 +15,7 @@
 # Version 2.3 - 24-08-2023 SorenLundt - Adding automatically detection if running in user or system context. Removing Context parameter
 # Version 2.4 - 24-08-2023 SorenLundt - WindowStyle Hidden for winget process + Other small fixes..
 # Version 2.5 - 24-08-2023 SorenLundt - Added --scope $Context to winget cmd to avoid detecting applications in wrong context
+# Version 2.6 - 18-10-2023 SorenLundt - Added --accept-source-agreements when searching for latest winget package to avoid any prompts
 
 # Settings
 $id = "Exact WinGet Package ID" # WinGet Package ID - ex. VideoLAN.VLC
@@ -103,7 +104,7 @@ if ($Context -contains "Machine"){
 # Get latest version from WinGet
 if ($TargetVersion -eq $null -or $TargetVersion -eq '') {
 try {
-    Start-Process -FilePath $wingetPath -ArgumentList "show --id $id --exact" -WindowStyle Hidden -Wait -RedirectStandardOutput $stdout
+    Start-Process -FilePath $wingetPath -ArgumentList "show --id $id --exact --accept-source-agreements" -WindowStyle Hidden -Wait -RedirectStandardOutput $stdout
     $winGetOutput = Get-Content -Path $stdout
     Remove-Item -Path $stdout -Force
 
