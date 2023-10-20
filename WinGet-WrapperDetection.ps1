@@ -16,6 +16,7 @@
 # Version 2.4 - 24-08-2023 SorenLundt - WindowStyle Hidden for winget process + Other small fixes..
 # Version 2.5 - 24-08-2023 SorenLundt - Added --scope $Context to winget cmd to avoid detecting applications in wrong context
 # Version 2.6 - 18-10-2023 SorenLundt - Added --accept-source-agreements when searching for latest winget package to avoid any prompts
+# Version 2.7 - 20-10-2023 SorenLundt - Fixed issues where applications containing + would not be detected.. Regex issue
 
 # Settings
 $id = "Exact WinGet Package ID" # WinGet Package ID - ex. VideoLAN.VLC
@@ -125,6 +126,15 @@ try {
     Start-Process -FilePath $wingetPath -ArgumentList "list $id --exact --accept-source-agreements --scope $Context" -WindowStyle Hidden -Wait -RedirectStandardOutput $stdout
     $searchString = Get-Content -Path $stdout
     Remove-Item -Path $stdout -Force
+
+# Check if $searchString contains + character
+if ($searchString -match '\+') {
+    # Remove + character from $id
+    $searchString = $searchString -replace '\+', ' '
+    # Remove + character from $id
+    $id = $id -replace '\+', ' '
+}
+
 $versions = [regex]::Matches($searchString, "(?m)^.*$id\s*(?:[<>]?[\s]*)([\d.]+).*?$").Groups[1].Value
 
     if ($versions) {

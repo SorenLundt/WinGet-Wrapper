@@ -7,6 +7,7 @@
 # Version 1.2 - 24-08-2023 SorenLundt - WindowStyle Hidden for winget process + Other small fixes..
 # Version 1.3 - 25-08-2023 SorenLundt - Removing logging part. The script must only output "Installed" or "Not Installed"
 # Version 1.4 - 24-08-2023 SorenLundt - Added --scope $Context to winget cmd to avoid detecting applications in wrong context
+# Version 1.55 - 20-10-2023 SorenLundt - Fixed issues where applications containing + would not be detected.. Regex issue
 
 # Settings
 $id = "Exact WinGet Package ID" # WinGet Package ID - ex. VideoLAN.VLC
@@ -56,9 +57,17 @@ try {
     Start-Process -FilePath $wingetPath -ArgumentList "list $id --exact --accept-source-agreements --scope $Context" -WindowStyle Hidden -Wait -RedirectStandardOutput $stdout
     $searchString = Get-Content -Path $stdout
     Remove-Item -Path $stdout -Force
+    
+# Check if $searchString contains + character
+if ($searchString -match '\+') {
+    # Remove + character from $id
+    $searchString = $searchString -replace '\+', ' '
+    # Remove + character from $id
+    $id = $id -replace '\+', ' '
+}
+
 $versions = [regex]::Matches($searchString, "(?m)^.*$id\s*(?:[<>]?[\s]*)([\d.]+).*?$").Groups[1].Value
 
-   
     if ($versions) {
         $InstalledVersion = ($versions | sort {[version]$_} | select -Last 1)
         Write-Output "Installed"
