@@ -159,13 +159,16 @@ $InstalledVersion = [System.Version]::new($InstalledVersion)
 # Check versions
 if ($AcceptNewerVersion -eq $false -and $InstalledVersion -eq $TargetVersion) {
     Write-Output "exit 0 - Report Installed"
+    exit 0
     # exit 0 - report installed 
 }
 elseif ($AcceptNewerVersion -eq $true -and $InstalledVersion -ge $TargetVersion) {
     Write-Output "exit 0 - Report Installed"
+    exit 0
     # exit 0 - report installed 
 }
 else {
     Write-Output "exit 1 - Report Not Installed"
+    exit 1
     # exit 1 - report not installed
 }
