@@ -18,6 +18,7 @@
 # Version 2.6 - 18-10-2023 SorenLundt - Added --accept-source-agreements when searching for latest winget package to avoid any prompts
 # Version 2.7 - 20-10-2023 SorenLundt - Fixed issues where applications containing + would not be detected.. Regex issue
 # Version 2.8 - 23-10-2023 SorenLundt - Convert version string to System.Version objects to properly compare Winget and Installed versions
+# Version 2.9 - 23-10-2023 SorenLundt - Updated version check segment + optimized detection by checking local installed version first
 
 # Settings
 $id = "Exact WinGet Package ID" # WinGet Package ID - ex. VideoLAN.VLC
@@ -103,6 +104,36 @@ if ($Context -contains "Machine"){
     $wingetPath = "winget.exe" 
     }
 
+# Get version installed locally on machine
+$InstalledVersion = $null  # Clear Variable
+try {
+    Start-Process -FilePath $wingetPath -ArgumentList "list $id --exact --accept-source-agreements --scope $Context" -WindowStyle Hidden -Wait -RedirectStandardOutput $stdout
+    $searchString = Get-Content -Path $stdout
+    Remove-Item -Path $stdout -Force
+
+# Check if $searchString contains + character
+if ($searchString -match '\+') {
+    # Remove + character from $id
+    $searchString = $searchString -replace '\+', ' '
+    # Remove + character from $id
+    $id = $id -replace '\+', ' '
+}
+$versions = [regex]::Matches($searchString, "(?m)^.*$id\s*(?:[<>]?[\s]*)([\d.]+).*?$").Groups[1].Value
+    if ($versions) {
+        $InstalledVersion = ($versions | sort {[version]$_} | select -Last 1)
+        Write-Output "Installed version: $InstalledVersion"
+    }
+    else {
+        Write-Output "Package not found - #exit 1"
+        exit 1
+    }
+} catch {
+        Write-Output "Failed to get installed version: $($_.Exception.Message)"
+        Write-Output "exit 1 - Report Not Installed"
+        # Exit 1 - Report Not Installed
+        exit 1
+    }
+
 # Get latest version from WinGet
 if ($TargetVersion -eq $null -or $TargetVersion -eq '') {
 try {
@@ -121,46 +152,20 @@ catch {
 { Write-Host "TargetVersion: $TargetVersion (Set specific)"}
 
 
-# Get version installed locally on machine
-$InstalledVersion = $null  # Clear Variable
-try {
-    Start-Process -FilePath $wingetPath -ArgumentList "list $id --exact --accept-source-agreements --scope $Context" -WindowStyle Hidden -Wait -RedirectStandardOutput $stdout
-    $searchString = Get-Content -Path $stdout
-    Remove-Item -Path $stdout -Force
-
-# Check if $searchString contains + character
-if ($searchString -match '\+') {
-    # Remove + character from $id
-    $searchString = $searchString -replace '\+', ' '
-    # Remove + character from $id
-    $id = $id -replace '\+', ' '
-}
-
-$versions = [regex]::Matches($searchString, "(?m)^.*$id\s*(?:[<>]?[\s]*)([\d.]+).*?$").Groups[1].Value
-
-    if ($versions) {
-        $InstalledVersion = ($versions | sort {[version]$_} | select -Last 1)
-        Write-Output "Installed version: $InstalledVersion"
-    }
-    else {
-        Write-Output "Package not found - #exit 1"
-        exit 1
-    }
-} catch {
-        Write-Output "Failed to get installed version: $($_.Exception.Message)"
-        # Exit 1 - Report Not Installed
-        exit 1
-    }
-
 # Convert version strings to System.Version objects
 $TargetVersion = [System.Version]::new($TargetVersion)
 $InstalledVersion = [System.Version]::new($InstalledVersion)
 
-if ($InstalledVersion -ge $TargetVersion -or ($AcceptNewerVersion -and $InstalledVersion -gt $TargetVersion)){
+# Check versions
+if ($AcceptNewerVersion -eq $false -and $InstalledVersion -eq $TargetVersion) {
     Write-Output "exit 0 - Report Installed"
-    exit 0 #exit 0 - report installed 
+    # exit 0 - report installed 
+}
+elseif ($AcceptNewerVersion -eq $true -and $InstalledVersion -ge $TargetVersion) {
+    Write-Output "exit 0 - Report Installed"
+    # exit 0 - report installed 
 }
 else {
     Write-Output "exit 1 - Report Not Installed"
-    exit 1 #exit 1 - report not installed
+    # exit 1 - report not installed
 }
