@@ -17,6 +17,7 @@
 # Version 2.5 - 24-08-2023 SorenLundt - Added --scope $Context to winget cmd to avoid detecting applications in wrong context
 # Version 2.6 - 18-10-2023 SorenLundt - Added --accept-source-agreements when searching for latest winget package to avoid any prompts
 # Version 2.7 - 20-10-2023 SorenLundt - Fixed issues where applications containing + would not be detected.. Regex issue
+# Version 2.8 - 23-10-2023 SorenLundt - Convert version string to System.Version objects to properly compare Winget and Installed versions
 
 # Settings
 $id = "Exact WinGet Package ID" # WinGet Package ID - ex. VideoLAN.VLC
@@ -150,6 +151,10 @@ $versions = [regex]::Matches($searchString, "(?m)^.*$id\s*(?:[<>]?[\s]*)([\d.]+)
         # Exit 1 - Report Not Installed
         exit 1
     }
+
+# Convert version strings to System.Version objects
+$TargetVersion = [System.Version]::new($TargetVersion)
+$InstalledVersion = [System.Version]::new($InstalledVersion)
 
 if ($InstalledVersion -ge $TargetVersion -or ($AcceptNewerVersion -and $InstalledVersion -gt $TargetVersion)){
     Write-Output "exit 0 - Report Installed"
