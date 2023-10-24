@@ -21,8 +21,8 @@
 # Version 1.2 - 20-09-2023 SorenLundt - Added possiblity to deploy application once imported. Set via CSV file (InstallIntent, Notification, GroupID)
 # Version 1.3 - 20-09-2023 SorenLundt - If -SkipConfirmation set will skip the entire WinGet package output section
 # Version 1.4 - 27-09-2023 SorenLundt - Added -OverWrite which will delete apps with the same display name
-# Version 1.5 - 27-09-2023 SorenLundt - Removed -OverWrite feature - Requires more work.. Some bugs
-
+# Version 1.5 - 27-09-2023 SorenLundt - Remove -OverWrite feature - Requires more work.. Some bugs
+# Version 1.6 - 24-10-2023 SorenLundt - When importing packages with UpdateOnly=1 will now use "winget update" instead of "winget install"
 
 #Parameters
 Param (
@@ -59,7 +59,7 @@ write-host " "
 if (Test-Path -Path $csvFile -PathType Leaf) {
     Write-Host "File: $csvFile"
 } else {
-    Write-Host "File does not found: $csvFile" -ForegroundColor "Red"
+    Write-Host "File not found: $csvFile" -ForegroundColor "Red"
     return
 }
 
@@ -359,6 +359,11 @@ $ArgumentListInstall += " --version $($Row.TargetVersion)"
 else {
     $ArgumentListInstall = $row.CustomArgumentListInstall
 }
+#Replace first 7 characters of ArgumentListInstall with "update" if package is UpdateOnly
+if ($Row.UpdateOnly -eq $true) 
+{
+    $ArgumentListInstall = "update" + $ArgumentListInstall.Substring(7)
+}
 
 #Build ArgumentListUninstall (if no custom argumentlist set)
 if ([string]::IsNullOrEmpty($row.CustomArgumentListUninstall)) {
@@ -370,6 +375,7 @@ $ArgumentListUninstall += " --version $($Row.TargetVersion)"
 else {
     $ArgumentListUninstall = $row.CustomArgumentListUninstall
 }
+
 
 # Build install commandline
 $InstallCommandLine = "Powershell.exe -NoLogo -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File WinGet-Wrapper.ps1 -PackageName $($row.PackageID) -ArgumentList "+[char]34+"$ArgumentListInstall"+[char]34
