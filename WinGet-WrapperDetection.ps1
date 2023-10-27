@@ -20,6 +20,7 @@
 # Version 2.8 - 23-10-2023 SorenLundt - Convert version string to System.Version objects to properly compare Winget and Installed versions
 # Version 2.9 - 23-10-2023 SorenLundt - Updated version check segment + optimized detection by checking local installed version first
 # Version 3.0 - 24-10-2023 SorenLundt - Fixed issue where packages containing + would not be able to search on winget and small minor changes.
+# Version 3.1 - 27-10-2023 SorenLundt - Fixed issues with certain packages missing revision in version number, causing version mismatch compare to fail (ex. installed: 4.0.10  - Winget: 4.0.10.0)
 
 # Settings
 $id = "Exact WinGet Package ID" # WinGet Package ID - ex. VideoLAN.VLC
@@ -160,6 +161,16 @@ $versions = [regex]::Matches($searchString, "(?m)^.*$InstalledID\s*(?:[<>]?[\s]*
 # Convert version strings to System.Version objects
 $TargetVersion = [System.Version]::new($TargetVersion)
 $InstalledVersion = [System.Version]::new($InstalledVersion)
+
+# Set the revision to 0 if it's -1 for InstalledVersion
+if ($InstalledVersion.Revision -eq -1) {
+    $InstalledVersion = [System.Version]::new($InstalledVersion.Major, $InstalledVersion.Minor, $InstalledVersion.Build, 0)
+}
+
+# Set the revision to 0 if it's -1 for TargetVersion
+if ($TargetVersion.Revision -eq -1) {
+    $TargetVersion = [System.Version]::new($TargetVersion.Major, $TargetVersion.Minor, $TargetVersion.Build, 0)
+}
 
 # Check versions
 if ($AcceptNewerVersion -eq $false -and $InstalledVersion -eq $TargetVersion) {
