@@ -23,6 +23,7 @@
 # Version 3.1 - 27-10-2023 SorenLundt - Fixed issues with certain packages missing revision in version number, causing version mismatch compare to fail (ex. installed: 4.0.10  - Winget: 4.0.10.0)
 # Version 3.2 - 13-11-2023 SorenLundt - Fixed issues with packages with build number (GitHub issue #6) Added function to correct empty(-1) major, minor, build, revision.  Sets it from -1 to 0
 # Version 3.3 - 13-11-2023 SorenLundt - Added proper logging function instead of using Start-Transscript (Github Issue #5)
+# Version 3.4 - 13-11-2023 SorenLundt - Minor issue. Wrong log filename, contained "Wrapper" instead of "Detection"
 
 # Settings
 $id = "Exact WinGet Package ID" # WinGet Package ID - ex. VideoLAN.VLC
@@ -50,7 +51,7 @@ if (!(Test-Path -Path $logPath)) {
 function Write-Log {
     param (
         [string]$Message,
-        [string]$LogFile = "$logPath\$($id)_WinGet_Wrapper_$($TimeStamp).log"
+        [string]$LogFile = "$logPath\$($id)_WinGet_Detection_$($TimeStamp).log"
     )
 
     $TimeStamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"

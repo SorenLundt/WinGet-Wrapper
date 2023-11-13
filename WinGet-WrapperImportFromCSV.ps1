@@ -24,6 +24,7 @@
 # Version 1.5 - 27-09-2023 SorenLundt - Remove -OverWrite feature - Requires more work.. Some bugs
 # Version 1.6 - 24-10-2023 SorenLundt - When importing packages with UpdateOnly=1 will now use "winget update" instead of "winget install"
 # Version 1.7 - 13-11-2023 SorenLundt - Minor script comment and code mismatch for replacing AcceptNeverVersion with $False (was $True)  Github issue #7
+# Version 1.8 - 13-11-2023 SorenLundt - Removed check if package already exists in InTune. Not reliable. Needs work. Improved required PS modules check/installation
 
 #Parameters
 Param (
@@ -40,12 +41,17 @@ Param (
 )
 
 # Install and load required modules
-Install-Module -Name "IntuneWin32App"  # https://github.com/MSEndpointMgr/IntuneWin32App
+# https://github.com/MSEndpointMgr/IntuneWin32App
+if (-not (Get-Module -Name "IntuneWin32App" -ListAvailable)) {
+    Install-Module -Name "IntuneWin32App"
+}
+if (-not (Get-Module -Name "Microsoft.Graph.Intune" -ListAvailable)) {
+    Install-Module -Name "Microsoft.Graph.Intune"
+}
+
+#Import modules
 Import-Module -Name "IntuneWin32App"
-
-Install-Module -Name "Microsoft.Graph.Intune"
 Import-Module -Name "Microsoft.Graph.Intune"
-
 
 # Welcome greeting
 Write-host " "
@@ -661,7 +667,8 @@ if ($Overwrite -eq $True) {
 }
 #>
     
-
+# Disabled section. Needs more work.
+<#  
 Write-Host "Checking if application already exists in Intune - $PackageName"
     # Get the Intune Win32 apps with the specified display name
     $CheckIntuneAppExists = Get-IntuneWin32App -DisplayName "$PackageName" -WarningAction SilentlyContinue
@@ -679,6 +686,7 @@ Write-Host "Checking if application already exists in Intune - $PackageName"
     else {
         Write-Host "OK! A similar package was not found in Intune."
     }
+#>
 
 #Import application to InTune
 try {
