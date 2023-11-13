@@ -21,6 +21,7 @@
 # Version 2.9 - 23-10-2023 SorenLundt - Updated version check segment + optimized detection by checking local installed version first
 # Version 3.0 - 24-10-2023 SorenLundt - Fixed issue where packages containing + would not be able to search on winget and small minor changes.
 # Version 3.1 - 27-10-2023 SorenLundt - Fixed issues with certain packages missing revision in version number, causing version mismatch compare to fail (ex. installed: 4.0.10  - Winget: 4.0.10.0)
+# Version 3.2 - 13-11-2023 SorenLundt - Fixed issues with packages with build number (GitHub issue #6) Added function to correct empty(-1) major, minor, build, revision.  Sets it from -1 to 0
 
 # Settings
 $id = "Exact WinGet Package ID" # WinGet Package ID - ex. VideoLAN.VLC
@@ -162,15 +163,17 @@ $versions = [regex]::Matches($searchString, "(?m)^.*$InstalledID\s*(?:[<>]?[\s]*
 $TargetVersion = [System.Version]::new($TargetVersion)
 $InstalledVersion = [System.Version]::new($InstalledVersion)
 
-# Set the revision to 0 if it's -1 for InstalledVersion
-if ($InstalledVersion.Revision -eq -1) {
-    $InstalledVersion = [System.Version]::new($InstalledVersion.Major, $InstalledVersion.Minor, $InstalledVersion.Build, 0)
+# Function to set all version components to 0 if they are -1
+function SetVersion($version) {
+    $major = if ($version.Major -eq -1) { 0 } else { $version.Major }
+    $minor = if ($version.Minor -eq -1) { 0 } else { $version.Minor }
+    $build = if ($version.Build -eq -1) { 0 } else { $version.Build }
+    $revision = if ($version.Revision -eq -1) { 0 } else { $version.Revision }
+    return [System.Version]::new($major, $minor, $build, $revision)
 }
 
-# Set the revision to 0 if it's -1 for TargetVersion
-if ($TargetVersion.Revision -eq -1) {
-    $TargetVersion = [System.Version]::new($TargetVersion.Major, $TargetVersion.Minor, $TargetVersion.Build, 0)
-}
+$InstalledVersion = SetVersion $InstalledVersion
+$TargetVersion = SetVersion $TargetVersion
 
 # Check versions
 if ($AcceptNewerVersion -eq $false -and $InstalledVersion -eq $TargetVersion) {
