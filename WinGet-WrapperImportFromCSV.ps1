@@ -23,6 +23,7 @@
 # Version 1.4 - 27-09-2023 SorenLundt - Added -OverWrite which will delete apps with the same display name
 # Version 1.5 - 27-09-2023 SorenLundt - Remove -OverWrite feature - Requires more work.. Some bugs
 # Version 1.6 - 24-10-2023 SorenLundt - When importing packages with UpdateOnly=1 will now use "winget update" instead of "winget install"
+# Version 1.7 - 13-11-2023 SorenLundt - Minor script comment and code mismatch for replacing AcceptNeverVersion with $False (was $True)  Github issue #7
 
 #Parameters
 Param (
@@ -471,7 +472,7 @@ if ($scriptText -match "(?s)$startPattern.*?$endPattern") {
 if ($Row.AcceptNewerVersion -eq $True) {
     $settingsSection = $settingsSection -replace '"\$True"','$True'
 }
-# If $Row.AcceptNewerVersion is $False, replace "$True" with "$False"
+# If $Row.AcceptNewerVersion is $False, replace "$False" with "$False"
 elseif ($Row.AcceptNewerVersion -eq $False) {
     $settingsSection = $settingsSection -replace '"\$False"','$False'
 }
@@ -598,7 +599,7 @@ $WinGetWrapperInTuneWinFilePath = Join-Path -Path $PackageFolderPath -ChildPath 
 $DetectionRuleScript = New-IntuneWin32AppDetectionRuleScript -ScriptFile $WingetDetectionScriptDestination
 
 #RequirementRule Base
-$RequirementRule = New-IntuneWin32AppRequirementRule -Architecture "All" -MinimumSupportedWindowsRelease "W10_20H2"
+$RequirementRule = New-IntuneWin32AppRequirementRule -Architecture "All" -MinimumSupportedWindowsRelease "W10_20H2" 
 
 # Build base Add-InTuneWin32App Arguments
 $AddInTuneWin32AppArguments = @{
