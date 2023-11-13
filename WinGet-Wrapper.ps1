@@ -22,6 +22,8 @@
 # Version 1.6 - 24-08-2023 SorenLundt - Added automatically detection if running in user or system context. Decide context using deployment tools (InTune). Removing Context parameter
 # Version 1.7 - 24-08-2023 SorenLundt - Added support for running pre/post script before winget action + WindowStyle Hidden for winget process + Other small fixes..
 # Version 1.8 - 13-11-2023 SorenLundt - Added proper logging function instead of using Start-Transscript (Github Issue #5)
+# Version 1.9 - 13-11-2023 SorenLundt - Improved log output and added $ScriptVersion variable
+$ScriptVersion = "1.9"
 
 Param (
     # PackageName = Package name mainly used for naming the log file.
@@ -78,14 +80,19 @@ function Write-Log {
     $LogEntry | Out-File -Append -FilePath $LogFile
 }
 
+
 #Write useful variables to log
-Write-Log "**********************"
-Write-Log "WinGet-Wrapper: https://github.com/SorenLundt/WinGet-Wrapper"
+Write-Log "                    WinGet-Wrapper v.$ScriptVersion"
+Write-Log "https://github.com/SorenLundt/WinGet-Wrapper"
+Write-Log "**************************************************"
+Write-Log "Host: $env:ComputerName"
 Write-Log "PackageName: $PackageName"
 Write-Log "StopProcess: $StopProcess"
 Write-Log "PreScript: $PreScript"
 Write-Log "PostScript: $PostScript"
 Write-Log "ArgumentList: $ArgumentList"
+Write-Log "LogPath: $logPath"
+Write-Log "**************************************************"
 
 #PreScript
 if (![string]::IsNullOrEmpty($PreScript)) {
