@@ -25,7 +25,6 @@
 # Version 3.3 - 13-11-2023 SorenLundt - Added proper logging function instead of using Start-Transscript (Github Issue #5)
 # Version 3.4 - 13-11-2023 SorenLundt - Minor issue. Wrong log filename, contained "Wrapper" instead of "Detection". Also now removing old *.txt files from log directory
 # Version 3.5 - 13-11-2023 SorenLundt - Improved log output and added $ScriptVersion variable
-$ScriptVersion = "3.5"
 
 # Settings
 $id = "Exact WinGet Package ID" # WinGet Package ID - ex. VideoLAN.VLC
@@ -34,6 +33,7 @@ $AcceptNewerVersion = "$True"   # Allows locally installed versions to be newer 
 # EndSettings
 
 #Define common variables
+$ScriptVersion = "3.5"
 $timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
 $logPath = "$env:ProgramData\WinGet-WrapperLogs"
 $stdout = "$logPath\StdOut-$timestamp.txt"

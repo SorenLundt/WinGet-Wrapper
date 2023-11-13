@@ -23,8 +23,8 @@
 # Version 1.7 - 24-08-2023 SorenLundt - Added support for running pre/post script before winget action + WindowStyle Hidden for winget process + Other small fixes..
 # Version 1.8 - 13-11-2023 SorenLundt - Added proper logging function instead of using Start-Transscript (Github Issue #5)
 # Version 1.9 - 13-11-2023 SorenLundt - Improved log output and added $ScriptVersion variable
-$ScriptVersion = "1.9"
 
+#Parameters
 Param (
     # PackageName = Package name mainly used for naming the log file.
     [Parameter(Mandatory=$true)]
@@ -48,6 +48,7 @@ Param (
 )
 
 #Define common variables
+$ScriptVersion = "1.9"
 $timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
 $logPath = "$env:ProgramData\WinGet-WrapperLogs"
 $stdout = "$logPath\StdOut-$timestamp.txt"
