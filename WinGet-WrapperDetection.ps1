@@ -4,7 +4,7 @@
 # Version 1.2 - 28-02-2023 SorenLundt - Added logging capability
 # Version 1.3 - 01-03-2023 SorenLundt/ChatGPT - Changed expression to properly find the local installed version. Issue that winget list also shows available version from winget
 # Version 1.4 - 01-03-2023 SorenLundt - Added section to cleanup old log files. 60 days.
-# Version 1.5 - 13-03-2023 SorenLundt - Overall added better error handling - try/catch - Write-Output
+# Version 1.5 - 13-03-2023 SorenLundt - Overall added better error handling - try/catch - Write-Log
 # Version 1.6 - 13-03-2023 SorenLundt - Added functionality to report installed if locally installed version is newer than Available WinGet or TargetVersion. $AcceptNewerVersion
 # Version 1.7 - 14-03-2023 SorenLundt - Added functionality to auto update - fixes issue #1 on https://github.com/SorenLundt/WinGet-Wrapper.
 # Version 1.8 - 26-05-2023 SorenLundt - Added support for context choice by adding $Context variable
@@ -22,6 +22,7 @@
 # Version 3.0 - 24-10-2023 SorenLundt - Fixed issue where packages containing + would not be able to search on winget and small minor changes.
 # Version 3.1 - 27-10-2023 SorenLundt - Fixed issues with certain packages missing revision in version number, causing version mismatch compare to fail (ex. installed: 4.0.10  - Winget: 4.0.10.0)
 # Version 3.2 - 13-11-2023 SorenLundt - Fixed issues with packages with build number (GitHub issue #6) Added function to correct empty(-1) major, minor, build, revision.  Sets it from -1 to 0
+# Version 3.3 - 13-11-2023 SorenLundt - Added proper logging function instead of using Start-Transscript (Github Issue #5)
 
 # Settings
 $id = "Exact WinGet Package ID" # WinGet Package ID - ex. VideoLAN.VLC
@@ -41,27 +42,33 @@ if (!(Test-Path -Path $logPath)) {
         New-Item -Path $logPath -Force -ItemType Directory | Out-Null
     }
     catch {
-        Write-Output "Failed to create log directory: $($_.Exception.Message)"
+        Write-Log "Failed to create log directory: $($_.Exception.Message)"
         exit 1
     }
 }
 
-# Set up log file
-$logFile = "$logPath\$($id)_WinGet_Detection_$($timestamp).log"
-try {
-    Start-Transcript -Path $logFile -Append
-}
-catch {
-    Write-Output "Failed to start transcript: $($_.Exception.Message)"
-    exit 1
+function Write-Log {
+    param (
+        [string]$Message,
+        [string]$LogFile = "$logPath\$($id)_WinGet_Wrapper_$($TimeStamp).log"
+    )
+
+    $TimeStamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $LogEntry = "[$TimeStamp] $Message"
+
+    # Output to the console
+    Write-Host $LogEntry
+
+    # Append to the log file
+    $LogEntry | Out-File -Append -FilePath $LogFile
 }
 
 #Write useful variables to log
-Write-Output "**********************"
-Write-Output "WinGet-Wrapper: https://github.com/SorenLundt/WinGet-Wrapper"
-Write-Output "ID: $id"
-Write-Output "TargetVersion: $TargetVersion"
-Write-OutPut "AcceptNewerVersion = $AcceptNewerVersion"
+Write-Log "**********************"
+Write-Log "WinGet-Wrapper: https://github.com/SorenLundt/WinGet-Wrapper"
+Write-Log "ID: $id"
+Write-Log "TargetVersion: $TargetVersion"
+Write-Log "AcceptNewerVersion = $AcceptNewerVersion"
 
 # Clean log files older than X days
 $daysToKeepLogs = 60
@@ -71,20 +78,20 @@ try {
     $filesToDelete | Remove-Item -Force | Out-Null
     if ($count -gt 0)
     {
-    Write-Output "Cleaned up a total of $count old logs older than $daysToKeepLogs days."
+    Write-Log "Cleaned up a total of $count old logs older than $daysToKeepLogs days."
     }
 }
 catch {
-    Write-Output "Failed to delete old log files: $($_.Exception.Message)"
+    Write-Log "Failed to delete old log files: $($_.Exception.Message)"
 }
 
 #Determine if running in system or user context
 if ($env:USERNAME -like "*$env:COMPUTERNAME*") {
-    Write-Output "Running in System Context"
+    Write-Log "Running in System Context"
     $Context = "Machine"
    }
    else {
-    Write-Output "Running in User Context"
+    Write-Log "Running in User Context"
     $Context = "User"
    }
 
@@ -95,15 +102,15 @@ if ($Context -contains "Machine"){
         if ($resolveWingetPath) {
             $wingetPath = $resolveWingetPath[-1].Path
             $wingetPath = $wingetPath + "\winget.exe"
-            Write-Output "WinGet path: $wingetPath"
+            Write-Log "WinGet path: $wingetPath"
         }
         else {
-            Write-Output "Failed to find WinGet path"
+            Write-Log "Failed to find WinGet path"
             exit 1
         }
     }
     catch {
-        Write-Output "Failed to find WinGet path: $($_.Exception.Message)"
+        Write-Log "Failed to find WinGet path: $($_.Exception.Message)"
         exit 1
     }
     }
@@ -120,10 +127,10 @@ try {
     Remove-Item -Path $stdout -Force
 
     $TargetVersion = $winGetOutput | Select-String -Pattern "version:" | ForEach-Object { $_.Line -replace '.*version:\s*(.*)', '$1' }
-    Write-Output "WinGet version: $TargetVersion"
+    Write-Log "WinGet version: $TargetVersion"
 }
 catch {
-    Write-Output "Failed to get latest version from WinGet: $($_.Exception.Message)"
+    Write-Log "Failed to get latest version from WinGet: $($_.Exception.Message)"
     exit 1
 }
 }elseif ($TargetVersion -ne $null -and $TargetVersion -ne '')
@@ -145,15 +152,15 @@ try {
 $versions = [regex]::Matches($searchString, "(?m)^.*$InstalledID\s*(?:[<>]?[\s]*)([\d.]+).*?$").Groups[1].Value
     if ($versions) {
         $InstalledVersion = ($versions | sort {[version]$_} | select -Last 1)
-        Write-Output "Installed version: $InstalledVersion"
+        Write-Log "Installed version: $InstalledVersion"
     }
     else {
-        Write-Output "Package not found - #exit 1"
+        Write-Log "Package not found - #exit 1"
         exit 1
     }
 } catch {
-        Write-Output "Failed to get installed version: $($_.Exception.Message)"
-        Write-Output "exit 1 - Report Not Installed"
+        Write-Log "Failed to get installed version: $($_.Exception.Message)"
+        Write-Log "exit 1 - Report Not Installed"
         # Exit 1 - Report Not Installed$inst
         exit 1
     }
@@ -177,17 +184,17 @@ $TargetVersion = SetVersion $TargetVersion
 
 # Check versions
 if ($AcceptNewerVersion -eq $false -and $InstalledVersion -eq $TargetVersion) {
-    Write-Output "exit 0 - Report Installed"
+    Write-Log "exit 0 - Report Installed"
     exit 0
     # exit 0 - report installed 
 }
 elseif ($AcceptNewerVersion -eq $true -and $InstalledVersion -ge $TargetVersion) {
-    Write-Output "exit 0 - Report Installed"
+    Write-Log "exit 0 - Report Installed"
     exit 0
     # exit 0 - report installed 
 }
 else {
-    Write-Output "exit 1 - Report Not Installed"
+    Write-Log "exit 1 - Report Not Installed"
     exit 1
     # exit 1 - report not installed
 }

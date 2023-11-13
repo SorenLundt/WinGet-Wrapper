@@ -21,6 +21,7 @@
 # Version 1.5 - 30-05-2023 SorenLundt - Fixed issues with running in user context (Winget path issues)
 # Version 1.6 - 24-08-2023 SorenLundt - Added automatically detection if running in user or system context. Decide context using deployment tools (InTune). Removing Context parameter
 # Version 1.7 - 24-08-2023 SorenLundt - Added support for running pre/post script before winget action + WindowStyle Hidden for winget process + Other small fixes..
+# Version 1.8 - 13-11-2023 SorenLundt - Added proper logging function instead of using Start-Transscript (Github Issue #5)
 
 Param (
     # PackageName = Package name mainly used for naming the log file.
@@ -56,42 +57,50 @@ if (!(Test-Path -Path $logPath)) {
         New-Item -Path $logPath -Force -ItemType Directory | Out-Null
     }
     catch {
-        Write-Output "Failed to create log directory: $($_.Exception.Message)"
+        Write-Log "Failed to create log directory: $($_.Exception.Message)"
         exit 1
     }
 }
 
-# Set up log file
-$logFile = "$logPath\$($PackageName)_WinGet_Wrapper_$($TimeStamp).log"
-try {
-    Start-Transcript -Path $logFile -Append
-}
-catch {
-    Write-Output "Failed to start transcript: $($_.Exception.Message)"
-    exit 1
+function Write-Log {
+    param (
+        [string]$Message,
+        [string]$LogFile = "$logPath\$($PackageName)_WinGet_Wrapper_$($TimeStamp).log"
+    )
+
+    $TimeStamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $LogEntry = "[$TimeStamp] $Message"
+
+    # Output to the console
+    Write-Host $LogEntry
+
+    # Append to the log file
+    $LogEntry | Out-File -Append -FilePath $LogFile
 }
 
 #Write useful variables to log
-Write-Output "PackageName: $PackageName"
-Write-Output "StopProcess: $StopProcess"
-Write-Output "PreScript: $PreScript"
-Write-Output "PostScript: $PostScript"
-Write-Output "ArgumentList: $ArgumentList"
+Write-Log "**********************"
+Write-Log "WinGet-Wrapper: https://github.com/SorenLundt/WinGet-Wrapper"
+Write-Log "PackageName: $PackageName"
+Write-Log "StopProcess: $StopProcess"
+Write-Log "PreScript: $PreScript"
+Write-Log "PostScript: $PostScript"
+Write-Log "ArgumentList: $ArgumentList"
 
 #PreScript
 if (![string]::IsNullOrEmpty($PreScript)) {
-    Write-OutPut "Running PreScript $PreScript"
+    Write-Log "Running PreScript $PreScript"
     if (Test-Path $PreScript -PathType Leaf) {
         try {
             Powershell.exe -NoLogo -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File $PreScript
         } catch {
-            Write-Output "An error occurred while running the PreScript: $_"
-            Write-Output "Exit 1"
+            Write-Log "An error occurred while running the PreScript: $_"
+            Write-Log "Exit 1"
             exit 1
         }
     } else {
-        Write-Output "PreScript not found: $PreScript"
-        Write-Output "Exit 1"
+        Write-Log "PreScript not found: $PreScript"
+        Write-Log "Exit 1"
         exit 1
     }
 }
@@ -99,16 +108,16 @@ if (![string]::IsNullOrEmpty($PreScript)) {
 #Stop process
 if (-not ($StopProcess -eq $null) -and $StopProcess -ne "") {
     Stop-Process -Name $StopProcess -Force -ErrorAction SilentlyContinue -WarningAction SilentlyContinue
-    Write-Output "Stopped process: $StopProcess"
+    Write-Log "Stopped process: $StopProcess"
 }
 
 #Determine if running in system or user context
 if ($env:USERNAME -like "*$env:COMPUTERNAME*") {
-    Write-Output "Running in System Context"
+    Write-Log "Running in System Context"
     $Context = "Machine"
    }
    else {
-    Write-Output "Running in User Context"
+    Write-Log "Running in User Context"
     $Context = "User"
    }
 
@@ -119,15 +128,15 @@ try {
     if ($resolveWingetPath) {
         $wingetPath = $resolveWingetPath[-1].Path
         $wingetPath = $wingetPath + "\winget.exe"
-        Write-Output "WinGet path: $wingetPath"
+        Write-Log "WinGet path: $wingetPath"
     }
     else {
-        Write-Output "Failed to find WinGet path"
+        Write-Log "Failed to find WinGet path"
         exit 1
     }
 }
 catch {
-    Write-Output "Failed to find WinGet path: $($_.Exception.Message)"
+    Write-Log "Failed to find WinGet path: $($_.Exception.Message)"
     exit 1
 }
 }
@@ -136,30 +145,41 @@ else{
 $wingetPath = "winget.exe" 
 }
 
-Write-Output "Executing $wingetPath $ArgumentList"
+Write-Log "Executing $wingetPath $ArgumentList"
 Start-Process "$WingetPath" -ArgumentList "$ArgumentList" -WindowStyle Hidden -PassThru -Wait -RedirectStandardOutput "$stdout" -RedirectStandardError "$errout"
 
-get-content "$stdout"
-get-content "$errout"
+# Log the contents of the stdout and errout
+$stdoutContent = Get-Content "$stdout"
+$erroutContent = Get-Content "$errout"
+
+# Log the contents of the stdout and errout  (single lines)
+$stdoutContent -split "`r`n" | ForEach-Object {
+    Write-Log "  $_"
+}
+$erroutContent -split "`r`n" | ForEach-Object {
+    Write-Log "  $_"
+}
+
+
 Remove-item -Path "$stdout"
 Remove-item -Path "$errout"
 
 #PostScript
 if (![string]::IsNullOrEmpty($PostScript)) {
-    Write-OutPut "Running PostScript $PostScript"
+    Write-Log "Running PostScript $PostScript"
     if (Test-Path $PostScript -PathType Leaf) {
         try {
             Powershell.exe -NoLogo -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File $PostScript
         } catch {
-            Write-Output "An error occurred while running the PostScript: $_"
-            Write-Output "Exit 1"
+            Write-Log "An error occurred while running the PostScript: $_"
+            Write-Log "Exit 1"
             exit 1
         }
     } else {
-        Write-Output "PostScript not found: $PostScript"
-        Write-Output "Exit 1"
+        Write-Log "PostScript not found: $PostScript"
+        Write-Log "Exit 1"
         exit 1
     }
 }
 
-write-Output "Script Finished"
+Write-Log "Script Finished"
