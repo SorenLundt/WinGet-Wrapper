@@ -25,7 +25,7 @@
 # Version 1.6 - 24-10-2023 SorenLundt - When importing packages with UpdateOnly=1 will now use "winget update" instead of "winget install"
 # Version 1.7 - 13-11-2023 SorenLundt - Minor script comment and code mismatch for replacing AcceptNeverVersion with $False (was $True)  Github issue #7
 # Version 1.8 - 13-11-2023 SorenLundt - Removed check if package already exists in InTune. Not reliable. Needs work. Improved required PS modules check/installation
-
+# Version 1.9 - 13-11-2023 SorenLundt - Fixed issue where $True was not being replace by $False for $Row.AcceptNewerVersion value - Github issue #7
 #Parameters
 Param (
     #CSV File to import from (default: WinGet-WrapperImportFromCSV.csv)
@@ -478,9 +478,9 @@ if ($scriptText -match "(?s)$startPattern.*?$endPattern") {
 if ($Row.AcceptNewerVersion -eq $True) {
     $settingsSection = $settingsSection -replace '"\$True"','$True'
 }
-# If $Row.AcceptNewerVersion is $False, replace "$False" with "$False"
+# If $Row.AcceptNewerVersion is $False, replace "$True" with "$False"
 elseif ($Row.AcceptNewerVersion -eq $False) {
-    $settingsSection = $settingsSection -replace '"\$False"','$False'
+    $settingsSection = $settingsSection -replace '"\$True"','$False'
 }
 
     # Replace "Exact WinGet Package ID" with the actual value of $PackageID within the # Settings section
