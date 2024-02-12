@@ -648,7 +648,7 @@ $InTuneimportButton.Add_Click({
     # Define the arguments to be passed to the script
     $arguments = "-csvFile `"$csvFilePath`" -TenantID $($tenantIDTextBox.Text) -LogFile `"$logFile`" -ScriptRoot `"$scriptRoot`" -SkipConfirmation -SkipModuleCheck"
     Write-ConsoleTextBox "Arguments to be passed: $arguments"
-    Start-Process powershell -ArgumentList "-NoProfile", "-File `"$importScriptPath`"", $arguments -Wait -NoNewWindow  
+    Start-Process powershell -ArgumentList "-NoProfile", "-ExecutionPolicy Bypass", "-File `"$importScriptPath`"", $arguments -Wait -NoNewWindow
 
         # Run Update-GUIFromLogFile in the main thread
         Start-Sleep -Seconds 5  # wait log file creation before reading it
