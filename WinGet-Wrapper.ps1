@@ -1,4 +1,6 @@
-# Soren Lundt - 22-02-2023 - https://github.com/SorenLundt/WinGet-Wrapper
+# Soren Lundt - 22-02-2023
+# URL: https://github.com/SorenLundt/WinGet-Wrapper
+# License: https://raw.githubusercontent.com/SorenLundt/WinGet-Wrapper/main/LICENSE.txt
 # Wrapper for running winget in system context. Finds the WinGet install path and runs desired command
 #
 # Usage: .\WinGet-Wrapper.ps1 -PackageName "Packagename used in log entry" -Context "User or System" -StopProcess "kill process using Stop-Process (.exe for the most part is not needed)" -ArgumentList "Arguments Passed to WinGet.exe"
@@ -85,6 +87,7 @@ function Write-Log {
 #Write useful variables to log
 Write-Log "                    WinGet-Wrapper v.$ScriptVersion"
 Write-Log "https://github.com/SorenLundt/WinGet-Wrapper"
+Write-Log "                GNU General Public License v3"
 Write-Log "**************************************************"
 Write-Log "Host: $env:ComputerName"
 Write-Log "PackageName: $PackageName"

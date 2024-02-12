@@ -1,13 +1,21 @@
-# Soren Lundt - 12-09-2023 - https://github.com/SorenLundt/WinGet-Wrapper
+# Soren Lundt - 12-09-2023
+# URL: https://github.com/SorenLundt/WinGet-Wrapper
+# License: https://raw.githubusercontent.com/SorenLundt/WinGet-Wrapper/main/LICENSE.txt
+#
 # Imports packages from WinGet to InTune (incuding available WinGet package metadata)
 # Package content is stored under Packages\Package.ID-Context-UpdateOnly-UserName-yyyy-mm-dd-hhssmm
+# Logs file under Logs\WinGet_WrapperImportFromCSV_yyyy-MM-dd_HH-mm-ss.log
 # 
-# Usage: .\WinGet-WrapperImportFromCSV.ps1 -TenantID company.onmicrosoft.com -csvFile WinGet-WrapperImportFromCSV.csv -SkipConfirmation
+# Usage Example: .\WinGet-WrapperImportFromCSV.ps1 -TenantID company.onmicrosoft.com -csvFile WinGet-WrapperImportFromCSV.csv -SkipConfirmation
 #
 # Parameters:
 # csvFile = csvFile to import from (default: WinGet-WrapperImportFromCSV.csv)
 # TenantID = TenantID to connect to MSGraph/InTune
+# LogFile = Manually define logfile path. If not defined, default will be used
+# ScriptRoot = Do not set. Define script root path. Only used when running import job from WinGet-WrapperImportGUI
 # SkipConfirmation = Skips confirmation for each package
+# SkipModuleCheck = Do not install or update required modules.
+# 
 #
 # csvFile columns:
 # PackageID,Context,AcceptNewerVersion,UpdateOnly,TargetVersion,StopProcessInstall,StopProcessUninstall,PreScriptInstall,PostScriptInstall,PreScriptUninstall,PostScriptUninstall,CustomArgumentListInstall,CustomArgumentListUninstall,InstallIntent,Notification,GroupID
@@ -26,52 +34,125 @@
 # Version 1.7 - 13-11-2023 SorenLundt - Minor script comment and code mismatch for replacing AcceptNeverVersion with $False (was $True)  Github issue #7
 # Version 1.8 - 13-11-2023 SorenLundt - Removed check if package already exists in InTune. Not reliable. Needs work. Improved required PS modules check/installation
 # Version 1.9 - 14-11-2023 SorenLundt - Fixed issue where $True was not being replace by $False for $Row.AcceptNewerVersion value - Github issue #7
+# Version 2.0 - 28-11-2023 SorenLundt - Changed various file paths to be able to use script from GUI + added logging
+# Version 2.1 - 12-02-2024 SorenLundt - Various improvements/changes to support usage from WinGet-WrapperImportGUI (-SkipModuleCheck -Scriptroot)
+
 #Parameters
 Param (
     #CSV File to import from (default: WinGet-WrapperImportFromCSV.csv)
     [Parameter()]
-    [string]$csvFile = "WinGet-WrapperImportFromCSV.csv",
+    [string]$csvFile = "$PSScriptRoot\WinGet-WrapperImportFromCSV.csv",
 
     #TenantID to connect to MSGraph/InTune
     [Parameter(Mandatory=$True)]
     [string]$TenantID,
 
+    #LogFile (Manually define logfile path. If not defined, default will be used)
+    [string]$LogFile,
+
+    #ScriptRoot (Do not set. Define script root path. Only used when running import job from WinGet-WrapperImportGUI)
+    [string]$ScriptRoot,
+
     #Skips confirmation for each package before import
-    [Switch]$SkipConfirmation = $false
+    [Switch]$SkipConfirmation = $false,
+    
+    #Skips Module check
+    [Switch]$SkipModuleCheck = $false
 )
+
+#Timestamp
+$TimeStamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
+
+# Default Log File
+if (-not $LogFile) {
+    $LogFolder = Join-Path -Path $PSScriptRoot -ChildPath "Logs"
+
+    # Create logs folder if it doesn't exist
+    if (-not (Test-Path -Path $LogFolder)) {
+        New-Item -Path $LogFolder -ItemType Directory | Out-Null
+    }
+
+    $LogFile = Join-Path -Path $LogFolder -ChildPath "WinGet_WrapperImportFromCSV_$TimeStamp.log"
+}
+
+function Write-Log {
+    param (
+        [string]$Message,
+        [string]$LogFile = "$LogFile"
+    )
+
+    $LogMsgTimeStamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $LogEntry = "[$LogMsgTimeStamp] $Message"
+
+    # Output to the console
+    Write-Host $LogEntry
+
+    # Append to the log file
+    $LogEntry | Out-File -Append -FilePath $LogFile
+}
+Write-Log "Log File: $LogFile"
+
+Write-log "Parameters: csvFile: $csvFile, TenantID: $TenantID, SkipConfirmation: $SkipConfirmation, LogFile: $LogFile, SkipModuleCheck: $SkipModuleCheck, scriptRoot: $scriptRoot"
 
 # Install and load required modules
 # https://github.com/MSEndpointMgr/IntuneWin32App
-if (-not (Get-Module -Name "IntuneWin32App" -ListAvailable)) {
-    Install-Module -Name "IntuneWin32App"
-}
-if (-not (Get-Module -Name "Microsoft.Graph.Intune" -ListAvailable)) {
-    Install-Module -Name "Microsoft.Graph.Intune"
+if (-not $SkipModuleCheck){
+$intuneWin32AppModule = "IntuneWin32App"
+$microsoftGraphIntuneModule = "Microsoft.Graph.Intune"
+
+# Check if update is required for IntuneWin32App module
+$moduleInstalled = Get-InstalledModule -Name $intuneWin32AppModule -ErrorAction SilentlyContinue
+
+if (-not $moduleInstalled) {
+    Install-Module -Name $intuneWin32AppModule -Force
+} else {
+    $latestVersion = (Find-Module -Name $intuneWin32AppModule).Version
+    if ($moduleInstalled.Version -lt $latestVersion) {
+        Update-Module -Name $intuneWin32AppModule -Force
+    } else {
+        Write-Host "Module $intuneWin32AppModule is already up-to-date."
+    }
 }
 
+# Check if update is required for Microsoft.Graph.Intune module
+$moduleInstalled = Get-InstalledModule -Name $microsoftGraphIntuneModule -ErrorAction SilentlyContinue
+
+if (-not $moduleInstalled) {
+    Install-Module -Name $microsoftGraphIntuneModule -Force
+} else {
+    $latestVersion = (Find-Module -Name $microsoftGraphIntuneModule).Version
+    if ($moduleInstalled.Version -lt $latestVersion) {
+        Update-Module -Name $microsoftGraphIntuneModule -Force
+    } else {
+        Write-Host "Module $microsoftGraphIntuneModule is already up-to-date."
+    }
+}
+}
 #Import modules
 Import-Module -Name "IntuneWin32App"
 Import-Module -Name "Microsoft.Graph.Intune"
 
 # Welcome greeting
-Write-host " "
-Write-host " "
-Write-host "-----------------------------"
-Write-Host "---- WinGet-WrapperCreate----"
-Write-host "-----------------------------"
-write-host " "
-write-host " "
+Write-Log " "
+Write-Log " "
+Write-Log "-----------------------------"
+Write-Log "---- WinGet-WrapperCreate----"
+Write-Log "-----------------------------"
+Write-Log " "
+Write-Log " "
+Write-Log "https://github.com/SorenLundt/WinGet-Wrapper"
+Write-Log "       GNU General Public License v3"
 
 # Test CSV path
-if (Test-Path -Path $csvFile -PathType Leaf) {
-    Write-Host "File: $csvFile"
+if (Test-Path -Path "$csvFile" -PathType Leaf) {
+    Write-Log "File: $csvFile"
 } else {
-    Write-Host "File not found: $csvFile" -ForegroundColor "Red"
+    Write-Log "File not found: $csvFile" -ForegroundColor "Red"
     return
 }
 
 # Import the CSV file with custom headers
-$data = Import-Csv -Path $csvFile -Header "PackageID", "Context", "AcceptNewerVersion", "UpdateOnly", "TargetVersion", "StopProcessInstall", "StopProcessUninstall", "PreScriptInstall", "PostScriptInstall", "PreScriptUninstall", "PostScriptUninstall", "CustomArgumentListInstall", "CustomArgumentListUninstall", "InstallIntent", "Notification", "GroupID" | Select-Object -Skip 1
+$data = Import-Csv -Path "$csvFile" -Header "PackageID", "Context", "AcceptNewerVersion", "UpdateOnly", "TargetVersion", "StopProcessInstall", "StopProcessUninstall", "PreScriptInstall", "PostScriptInstall", "PreScriptUninstall", "PostScriptUninstall", "CustomArgumentListInstall", "CustomArgumentListUninstall", "InstallIntent", "Notification", "GroupID" | Select-Object -Skip 1
 
 # Convert "AcceptNewerVersion" and "UpdateOnly" columns to Boolean values
 $data = $data | ForEach-Object {
@@ -79,66 +160,69 @@ $data = $data | ForEach-Object {
     $_.UpdateOnly = [bool]($_.UpdateOnly -as [int])
     $_
 }
-Write-host "-- IMPORT LIST --"
+Write-Log "-- IMPORT LIST --"
 foreach ($row in $data){
-    Write-Host "IMPORT PackageID:$($row.PackageID) - Context:$($row.Context) - UpdateOnly:$($row.UpdateOnly) - TargetVersion:$($row.TargetVersion)" -ForegroundColor Gray
+    Write-Log "IMPORT PackageID:$($row.PackageID) - Context:$($row.Context) - UpdateOnly:$($row.UpdateOnly) - TargetVersion:$($row.TargetVersion)" -ForegroundColor Gray
 }
-write-host ""
+Write-Log ""
 
-Write-host "-- DEPLOY LIST --"
+Write-Log "-- DEPLOY LIST --"
 foreach ($row in $data){
     if ($null = $row.GroupID -or $row.GroupID -ne "")
     {
-        write-host "DEPLOY PackageID:$($row.PackageID) GroupID:$($row.GroupID) InstallIntent:$($row.InstallIntent) Notification:$($row.Notification)" -ForegroundColor Gray
+        Write-Log "DEPLOY PackageID:$($row.PackageID) GroupID:$($row.GroupID) InstallIntent:$($row.InstallIntent) Notification:$($row.Notification)" -ForegroundColor Gray
     }
 }
 
 #Connect to Intune
+#if (-not $SkipInTuneConnection){
 try{  
 Connect-MSIntuneGraph -TenantID "$TenantID" -Interactive
 }
 catch {
-    write-host "ERROR: Connect-MSIntuneGraph Failed. Exiting" -ForegroundColor "Red"
+    Write-Log "ERROR: Connect-MSIntuneGraph Failed. Exiting" -ForegroundColor "Red"
     break
 }
+#}
+
 
 #Import each application to InTune
 foreach ($row in $data) {
 & {
     try{
-#Write-Host "--- Package Details ---"
-#Write-Host "PackageID: $($row.PackageID)"
-#Write-Host "Context: $($row.Context)"
-#Write-Host "AcceptNewerVersion: $($row.AcceptNewerVersion)"
-#Write-Host "UpdateOnly: $($row.UpdateOnly)"
-#Write-Host "TargetVersion: $($row.TargetVersion)"
-#Write-Host "StopProcessInstall: $($row.StopProcessInstall)"
-#Write-Host "StopProcessUninstall: $($row.StopProcessUninstall)"
-#Write-Host "PreScriptInstall: $($row.PreScriptInstall)"
-#Write-Host "PostScriptInstall: $($row.PostScriptInstall)"
-#Write-Host "PreScriptUninstall: $($row.PreScriptUninstall)"
-#Write-Host "PostScriptUninstall: $($row.PostScriptUninstall)"
-#Write-Host "CustomArgumentListInstall: $($row.CustomArgumentListInstall)"
-#Write-Host "CustomArgumentListInstall: $($row.CustomArgumentListUninstall)"
+#Write-Log "--- Package Details ---"
+#Write-Log "PackageID: $($row.PackageID)"
+#Write-Log "Context: $($row.Context)"
+#Write-Log "AcceptNewerVersion: $($row.AcceptNewerVersion)"
+#Write-Log "UpdateOnly: $($row.UpdateOnly)"
+#Write-Log "TargetVersion: $($row.TargetVersion)"
+#Write-Log "StopProcessInstall: $($row.StopProcessInstall)"
+#Write-Log "StopProcessUninstall: $($row.StopProcessUninstall)"
+#Write-Log "PreScriptInstall: $($row.PreScriptInstall)"
+#Write-Log "PostScriptInstall: $($row.PostScriptInstall)"
+#Write-Log "PreScriptUninstall: $($row.PreScriptUninstall)"
+#Write-Log "PostScriptUninstall: $($row.PostScriptUninstall)"
+#Write-Log "CustomArgumentListInstall: $($row.CustomArgumentListInstall)"
+#Write-Log "CustomArgumentListInstall: $($row.CustomArgumentListUninstall)"
 
 #TimeStamp
-$Timestamp = (Get-Date).ToString("yyyy-MM-dd-HHmmss")
+$Timestamp = (Get-Date).ToString("yyyyMMddHHmmss")
 
 #Get User
 $currentUser = $env:USERNAME
 
-Write-Host "--- Validation Start ---"
-write-host "Validating Package $($row.PackageID)"
+Write-Log "--- Validation Start ---"
+Write-Log "Validating Package $($row.PackageID)"
 #Check context is valid
 if ($row.Context -notin @("Machine", "machine", "User", "user")) {
-    Write-Host "Invalid context setting $($row.Context) for package $($row.PackageID) found in CSV. Please review the CSV. Exiting.." -ForegroundColor "Red"
+    Write-Log "Invalid context setting $($row.Context) for package $($row.PackageID) found in CSV. Please review the CSV. Exiting.." -ForegroundColor "Red"
     break
 }
 
 #Check AcceptNewerVersion is true or false
 if ($row.AcceptNewerVersion -ne $True -and $row.AcceptNewerVersion -ne $False)
 {
-    Write-Host "Invalid AcceptNewerVersion setting $($row.AcceptNewerVersion) for package $($row.PackageID) found in CSV. Please review the CSV. Exiting.." -ForegroundColor "Red"
+    Write-Log "Invalid AcceptNewerVersion setting $($row.AcceptNewerVersion) for package $($row.PackageID) found in CSV. Please review the CSV. Exiting.." -ForegroundColor "Red"
     break
 }
 
@@ -146,7 +230,7 @@ if ($row.AcceptNewerVersion -ne $True -and $row.AcceptNewerVersion -ne $False)
 if ($null -ne $row.InstallIntent -and $row.InstallIntent -ne "") {
     if ($row.InstallIntent -notcontains "Required" -and $row.InstallIntent -notcontains "required" -and $row.InstallIntent -notcontains "Available" -and $row.InstallIntent -notcontains "available")
     {
-        Write-Host "Invalid InstallIntent setting $($row.InstallIntent) for package $($row.PackageID) found in CSV. Please review CSV (Use Available or Required) Exiting.." -ForegroundColor "Red"
+        Write-Log "Invalid InstallIntent setting $($row.InstallIntent) for package $($row.PackageID) found in CSV. Please review CSV (Use Available or Required) Exiting.." -ForegroundColor "Red"
         break
     }
 }
@@ -155,7 +239,7 @@ if ($null -ne $row.InstallIntent -and $row.InstallIntent -ne "") {
 if ($null -ne $row.Notification -and $row.Notification -ne "") {
     $validNotificationValues = "showAll", "showReboot", "hideAll"
     if ($validNotificationValues -notcontains $row.Notification.ToLower()) {
-        Write-Host "Invalid Notification setting $($row.Notification) for package $($row.PackageID) found in CSV. Please review CSV (Use showAll, showReboot, or hideAll) Exiting.." -ForegroundColor "Red"
+        Write-Log "Invalid Notification setting $($row.Notification) for package $($row.PackageID) found in CSV. Please review CSV (Use showAll, showReboot, or hideAll) Exiting.." -ForegroundColor "Red"
         break
     }
 }
@@ -163,28 +247,28 @@ if ($null -ne $row.Notification -and $row.Notification -ne "") {
 #Check GroupID is set if InstallIntent is specified
 if ($null -ne $row.InstallIntent -and $row.InstallIntent -ne "") {
     if ($row.GroupID -eq $null -or $row.GroupID -eq "") {
-    Write-Host "Invalid GroupID setting $($row.GroupID) for package $($row.PackageID) found in CSV. Please review CSV. If InstallIntent is set, GroupID must be set too!"
+    Write-Log "Invalid GroupID setting $($row.GroupID) for package $($row.PackageID) found in CSV. Please review CSV. If InstallIntent is set, GroupID must be set too!"
     break
     }
 }
 
 #Check UpdateOnly is true or false
-Write-Host "Checking UpdateOnly Value for $($row.PackageID)"
+Write-Log "Checking UpdateOnly Value for $($row.PackageID)"
 if ($row.UpdateOnly -ne $True -and $row.UpdateOnly -ne $False)
 {
-    Write-Host "Invalid UpdateOnly setting $($row.UpdateOnly) for package $($row.PackageID) found in CSV. Please review the CSV. Exiting.."  -ForegroundColor "Red"
+    Write-Log "Invalid UpdateOnly setting $($row.UpdateOnly) for package $($row.PackageID) found in CSV. Please review the CSV. Exiting.."  -ForegroundColor "Red"
     break
 }
 
 #Check StopProcessInstall and StopProcessUninstall does not contain "exe"  (inform should not contain .exe)
-Write-Host "Checking StopProcessInstall Value for $($row.PackageID)"
+Write-Log "Checking StopProcessInstall Value for $($row.PackageID)"
 if ($row.StopProcessInstall -contains ".") {
-    Write-Host "Invalid StopProcessInstall setting $($row.StopProcessInstall) for package $($row.PackageID) found in CSV. Please review the CSV. Exiting.." -ForegroundColor "Red"
+    Write-Log "Invalid StopProcessInstall setting $($row.StopProcessInstall) for package $($row.PackageID) found in CSV. Please review the CSV. Exiting.." -ForegroundColor "Red"
     break
 }
-Write-Host "Checking StopProcessUninstall Value for $($row.PackageID)"
+Write-Log "Checking StopProcessUninstall Value for $($row.PackageID)"
 if ($row.StopProcessUninstall -contains ".") {
-    Write-Host "Invalid StopProcessUninstall setting $($row.StopProcessUninstall) for package $($row.PackageID) found in CSV. Please review the CSV. Exiting.." -ForegroundColor "Red"
+    Write-Log "Invalid StopProcessUninstall setting $($row.StopProcessUninstall) for package $($row.PackageID) found in CSV. Please review the CSV. Exiting.." -ForegroundColor "Red"
     break
 }
 
@@ -196,57 +280,57 @@ if (
     ($null -ne $row.PreScriptUninstall -and -not [string]::IsNullOrEmpty($row.PreScriptUninstall)) -or
     ($null -ne $row.PostScriptUninstall -and -not [string]::IsNullOrEmpty($row.PostScriptUninstall))
 ) {
-    Write-Host "Checking Pre-Script and Post-Script Values for $($row.PackageID)"
+    Write-Log "Checking Pre-Script and Post-Script Values for $($row.PackageID)"
     $row.PreScriptInstall
     $row.PostScriptInstall
     $row.PreScriptUninstall
     $row.PostScriptUninstall
     if ($row.PreScriptInstall -notlike "*.ps1" -or $row.PostScriptInstall -notlike "*.ps1" -or $row.PreScriptUninstall -notlike "*.ps1" -or $row.PostScriptUninstall -notlike "*.ps1" ) {
-        Write-Host "Invalid post or pre-script for package $($row.PackageID) found in CSV. Check that the value contains: .ps1 - Please review the CSV. Exiting.." -ForegroundColor "Red"
+        Write-Log "Invalid post or pre-script for package $($row.PackageID) found in CSV. Check that the value contains: .ps1 - Please review the CSV. Exiting.." -ForegroundColor "Red"
         break
 }
 } 
 #>
 
 #Print CustomArgumentListInstall if set and wait confirm
-Write-Host "Checking CustomArgumentListInstall Value for $($row.PackageID)"
+Write-Log "Checking CustomArgumentListInstall Value for $($row.PackageID)"
 if ($row.CustomArgumentListInstall -ne "" -or $null)
 {
-    Write-Host "-- CustomArgumentListInstall --"
-    write-host "$($row.CustomArgumentListInstall)"
+    Write-Log "-- CustomArgumentListInstall --"
+    Write-Log "$($row.CustomArgumentListInstall)"
     if (!$SkipConfirmation) {
     $confirmation = Read-Host "Please confirm CustomArgumentListInstall ($PackageID)? (Y/N)"
 
     if ($confirmation -eq "Y" -or $confirmation -eq "y") {
-     Write-Host "Confirmed"
+     Write-Log "Confirmed"
     } else {
-        Write-Host "CustomArgumentListInstall not confirmed. Exiting.."
+        Write-Log "CustomArgumentListInstall not confirmed. Exiting.."
         return
     }     
 }
 }
 
 #Print CustomArgumentListUninstall if set and wait confirm
-Write-Host "Checking CustomArgumentListUninstall Value for $($row.PackageID)"
+Write-Log "Checking CustomArgumentListUninstall Value for $($row.PackageID)"
 if ($row.CustomArgumentListUninstall -ne "" -or $null)
 {
-    Write-Host "-- CustomArgumentListUninstall --"
-    write-host "$($row.CustomArgumentListUninstall)"
+    Write-Log "-- CustomArgumentListUninstall --"
+    Write-Log "$($row.CustomArgumentListUninstall)"
     if (!$SkipConfirmation) {
     $confirmation = Read-Host "Please confirm CustomArgumentListUninstall ($PackageID)? (Y/N)"
 
     if ($confirmation -eq "Y" -or $confirmation -eq "y") {
-     Write-Host "Confirmed"
+     Write-Log "Confirmed"
     } else {
-        Write-Host "CustomArgumentListUninstall not confirmed. Exiting.."
+        Write-Log "CustomArgumentListUninstall not confirmed. Exiting.."
         return
     }     
 }
 }
 
-Write-Host "Finished Validation for $($row.PackageID)"
-Write-Host "--- Validation End ---"
-Write-Host ""
+Write-Log "Finished Validation for $($row.PackageID)"
+Write-Log "--- Validation End ---"
+Write-Log ""
 
 #Print Package details and wait for confirmation. If package not found break.
 $PackageIDOutLines = @(winget show --exact --id $($row.PackageID) --scope $($row.Context))
@@ -260,9 +344,9 @@ $PackageIDout = $PackageIDOutLines -join "`r`n"
 if ($PackageIDOutLines -notcontains "No package found matching input criteria.") {
     if ($PackageIDOutLines -notcontains "  No applicable installer found; see logs for more details.") {
         if (!$SkipConfirmation) {
-        Write-Host "--- WINGET PACKAGE INFORMATION ---"
-        Write-Host $PackageIDOut
-        Write-Host "--------------------------"
+        Write-Log "--- WINGET PACKAGE INFORMATION ---"
+        Write-Log $PackageIDOut
+        Write-Log "--------------------------"
         $confirmation = Read-Host "Confirm the package details above (Y/N)"
         if ($confirmation -eq "N" -or $confirmation -eq "N") {
         break
@@ -270,7 +354,7 @@ if ($PackageIDOutLines -notcontains "No package found matching input criteria.")
     }
     } else {
         # Second condition not met
-        Write-Host "Applicable installer not found for $($row.Context) context" -ForegroundColor "Red"
+        Write-Log "Applicable installer not found for $($row.Context) context" -ForegroundColor "Red"
         $imported = $False
         $row | Add-Member -MemberType NoteProperty -Name "Imported" -Value $imported  #Write imported status to $row
         $errortext = "Applicable installer not found for $($row.Context) context"
@@ -278,7 +362,7 @@ if ($PackageIDOutLines -notcontains "No package found matching input criteria.")
         continue
     }
 } else {
-    Write-Host "Package $($row.PackageID) not found using winget" -ForegroundColor "Red"
+    Write-Log "Package $($row.PackageID) not found using winget" -ForegroundColor "Red"
     return
 }
 
@@ -320,26 +404,26 @@ foreach ($variable in $variables) {
 }
 
 # Display the extracted variables
-write-host ""
-Write-Host "--- WinGet Scraped Metadata $($row.PackageID) ---"
-Write-Host "PackageName: $PackageName"
-Write-Host "Version: $Version"
-Write-Host "Publisher: $Publisher"
-Write-Host "PublisherURL: $PublisherURL"
-Write-Host "PublisherSupportURL: $PublisherSupportURL"
-Write-Host "Author: $Author"
-Write-Host "Description: $Description"
-Write-Host "Homepage: $Homepage"
-Write-Host "License: $License"
-Write-Host "LicenseURL: $LicenseURL"
-Write-Host "Copyright: $Copyright"
-Write-Host "CopyrightURL: $CopyrightURL"
-Write-Host "InstallerType: $InstallerType"
-Write-Host "InstallerLocale: $InstallerLocale"
-Write-Host "InstallerURL: $InstallerURL"
-Write-Host "InstallerSHA256: $InstallerSHA256"
-Write-Host ""
-Write-Host "--------------------------"
+Write-Log ""
+Write-Log "--- WinGet Scraped Metadata $($row.PackageID) ---"
+Write-Log "PackageName: $PackageName"
+Write-Log "Version: $Version"
+Write-Log "Publisher: $Publisher"
+Write-Log "PublisherURL: $PublisherURL"
+Write-Log "PublisherSupportURL: $PublisherSupportURL"
+Write-Log "Author: $Author"
+Write-Log "Description: $Description"
+Write-Log "Homepage: $Homepage"
+Write-Log "License: $License"
+Write-Log "LicenseURL: $LicenseURL"
+Write-Log "Copyright: $Copyright"
+Write-Log "CopyrightURL: $CopyrightURL"
+Write-Log "InstallerType: $InstallerType"
+Write-Log "InstallerLocale: $InstallerLocale"
+Write-Log "InstallerURL: $InstallerURL"
+Write-Log "InstallerSHA256: $InstallerSHA256"
+Write-Log ""
+Write-Log "--------------------------"
 
 # Build package details to prepare InTune import
 $PackageName += " ($($row.Context))"
@@ -411,17 +495,36 @@ if ($row.PostScriptUninstall -ne $null -and $row.PostScriptUninstall -ne "") {
     $InstallCommandLine += " -PostUninstall '$($row.PostScriptUninstall)'"
 }
 
-Write-host " "
-write-host "--InstallCommandLine--"
-Write-host "$InstallCommandLine"
-Write-host " "
-write-host "--UninstallCommandLine--"
-Write-host "$UninstallCommandLine"
-write-host " "
+Write-Log " "
+Write-Log "--InstallCommandLine--"
+Write-Log "$InstallCommandLine"
+Write-Log " "
+Write-Log "--UninstallCommandLine--"
+Write-Log "$UninstallCommandLine"
+Write-Log " "
 
 #Make folder to store script files
-# Make folder to store script files
-$currentDirectory = Get-Location
+
+#Find script root - set $currentDirectory
+if ($scriptRoot){
+    $currentDirectory = $scriptRoot }
+else {
+    $currentDirectory = $PSScriptRoot}
+
+write-log "currentDirectory: $currentDirectory"
+write-log "scriptRoot: $scriptRoot"
+write-log "PSScriptRoot: $PSScriptRoot"
+write-log "csvFile: $csvFile"
+write-log "LogFile: $LogFile"
+write-log "TenantID: $TenantID"
+write-log "SkipConfirmation: $SkipConfirmation"
+write-log "SkipInTuneConnection: $SkipInTuneConnection"
+write-log "SkipModuleCheck: $SkipModuleCheck"
+# Log the retrieval of variables using Get-Variable
+$variables = Get-Variable
+foreach ($variable in $variables) {
+    Write-Output "Retrieving variable: $($variable.Name) = $($variable.Value)"
+}
 
 # Generate foldername
 $folderName = "$($Row.PackageID)"
@@ -451,10 +554,10 @@ $PackageFolderPath = Join-Path -Path $packagesDirectory -ChildPath $folderName
 # Create the subfolder with the desired name
 New-Item -Path $PackageFolderPath -ItemType Directory | Out-Null
 
-
+Write-Log "Local Package Data Location: $PackageFolderPath"
 
 #Build DetectionScript
-$WingetDetectionScriptSource = "WinGet-WrapperDetection.ps1"
+$WingetDetectionScriptSource = "$currentDirectory\WinGet-WrapperDetection.ps1"
 $WingetDetectionScriptDestination = "$PackageFolderPath\WinGet-WrapperDetection-$($Row.PackageID).ps1"
 
 # Copy the source script to the destination
@@ -497,15 +600,15 @@ elseif ($Row.AcceptNewerVersion -eq $False) {
     # Save the updated script content
     Set-Content -Path $WingetDetectionScriptDestination -Value $scriptText
 
-    Write-Host "Detection Script complete. $WingetDetectionScriptDestination"
+    Write-Log "Detection Script complete. $WingetDetectionScriptDestination"
 } else {
-    Write-Host "The # Settings section was not found in the script." -ForegroundColor "Red"
+    Write-Log "The # Settings section was not found in the script." -ForegroundColor "Red"
 }
 
 
 #Build RequirementScript
 if ($Row.UpdateOnly -eq $True){
-    $WingetRequirementScriptSource = "Winget-WrapperRequirements.ps1"
+    $WingetRequirementScriptSource = "$currentDirectory\Winget-WrapperRequirements.ps1"
     $WingetRequirementScriptDestination = "$PackageFolderPath\WinGet-WrapperRequirements-$($Row.PackageID).ps1"
     
     # Copy the source script to the destination
@@ -523,9 +626,9 @@ if ($Row.UpdateOnly -eq $True){
         # Save the updated script content
         Set-Content -Path $WingetRequirementScriptDestination -Value $scriptContent
         
-        Write-Host "Requirement Script complete. $WingetRequirementScriptDestination"
+        Write-Log "Requirement Script complete. $WingetRequirementScriptDestination"
     } else {
-        Write-Host "The text 'Exact WinGet Package ID' was not found in the script." -ForegroundColor "Red"
+        Write-Log "The text 'Exact WinGet Package ID' was not found in the script." -ForegroundColor "Red"
     }
     }
 
@@ -553,48 +656,48 @@ if (-not (Test-Path -Path $intuneWinFolderPath -PathType Container)) {
     New-Item -Path $intuneWinFolderPath -ItemType Directory | Out-Null
 }
 # Copy WinGet-Wrapper.ps1
-Copy-Item -Path "WinGet-Wrapper.ps1" -Destination $intuneWinFolderPath -ErrorAction Stop
+Copy-Item -Path "$currentDirectory\WinGet-Wrapper.ps1" -Destination $intuneWinFolderPath -ErrorAction Stop
 
 # Copy pre or post script if specified
 if ($row.PreScriptInstall -ne $null -and $row.PreScriptInstall -ne "") {
     Copy-Item -Path $row.PreScriptInstall -Destination $intuneWinFolderPath -ErrorAction Stop
-    Write-Host "Copied $($row.PreScriptInstall) to $($intuneWinFolderPath)"
+    Write-Log "Copied $($row.PreScriptInstall) to $($intuneWinFolderPath)"
 }
 if ($row.PostScriptInstall -ne $null -and $row.PostScriptInstall -ne "") {
     Copy-Item -Path $row.PostScriptInstall -Destination $intuneWinFolderPath -ErrorAction Stop
-    Write-Host "Copied $($row.PostScriptInstall) to $($intuneWinFolderPath)"
+    Write-Log "Copied $($row.PostScriptInstall) to $($intuneWinFolderPath)"
 }
 if ($row.PreScriptUninstall -ne $null -and $row.PreScriptUninstall -ne "") {
     Copy-Item -Path $row.PreScriptUninstall -Destination $intuneWinFolderPath -ErrorAction Stop
-    Write-Host "Copied $($row.PreScriptUninstall) to $($intuneWinFolderPath)"
+    Write-Log "Copied $($row.PreScriptUninstall) to $($intuneWinFolderPath)"
 }
 if ($row.PostScriptUninstall -ne $null -and $row.PostScriptUninstall -ne "") {
     Copy-Item -Path $row.PostScriptUninstall -Destination $intuneWinFolderPath -ErrorAction Stop
-    Write-Host "Copied $($row.PostScriptUninstall) to $($intuneWinFolderPath)"
+    Write-Log "Copied $($row.PostScriptUninstall) to $($intuneWinFolderPath)"
 }}
 catch {
-    Write-host "Failed to copy files to build InTuneWin package. Please check pre/post script is found"
+    Write-Log "Failed to copy files to build InTuneWin package. Please check pre/post script is found"
     return
 }
 
 # Build WinGet-Wrapper.intunewin
-Write-Host "Building WinGet-Wrapper.InTuneWin file"
+Write-Log "Building WinGet-Wrapper.InTuneWin file"
 try {
 [string]$toolargs = "-c ""$($intuneWinFolderPath)"" -s ""WinGet-Wrapper.ps1"" -o ""$($PackageFolderPath)"" -q"
-(Start-Process -FilePath "$PSScriptRoot\IntuneWinAppUtil.exe" -ArgumentList $toolargs -PassThru:$true -ErrorAction Stop -NoNewWindow).WaitForExit()
+(Start-Process -FilePath "$currentDirectory\IntuneWinAppUtil.exe" -ArgumentList $toolargs -PassThru:$true -ErrorAction Stop -NoNewWindow).WaitForExit()
     
     # Check that IntuneWin was created
     if (Test-Path -Path "$PackageFolderPath\WinGet-Wrapper.intunewin" -PathType Leaf) {
-        Write-host "IntuneWinAppUtil.exe built WinGet-Wrapper.intunewin for $PackageName"
+        Write-Log "IntuneWinAppUtil.exe built WinGet-Wrapper.intunewin for $PackageName"
     }
     else {
-        Write-host "IntuneWinAppUtil.exe could not build WinGet-Wrapper.intunewin"
+        Write-Log "IntuneWinAppUtil.exe could not build WinGet-Wrapper.intunewin"
         return
     }
     
 }
 catch {
-    write-host "Error running IntuneWinAppUtil.exe"
+    Write-Log "Error running IntuneWinAppUtil.exe"
     return
 }
 
@@ -637,18 +740,18 @@ if ($Row.UpdateOnly -eq $True) {
 <#
 if ($Overwrite -eq $True) {
     try{
-    write-host "Overwrite enabled - Attempting to remove Win32App if it already exists in InTune - $PackageName "
-    write-host "$packagename"
+    Write-Log "Overwrite enabled - Attempting to remove Win32App if it already exists in InTune - $PackageName "
+    Write-Log "$packagename"
     $CheckIntuneAppExists = Get-IntuneWin32App -DisplayName "$PackageName"
-    write-host "627 - $CheckIntuneAppExists"
+    Write-Log "627 - $CheckIntuneAppExists"
     if ($CheckIntuneAppExists.Count -gt 0)
     {
-    write-host "Package found in InTune "
+    Write-Log "Package found in InTune "
     Remove-IntuneWin32App -DisplayName "$PackageName"
     [int]$NumberOfTimesChecked = 1
     do {
-        write-host "Checking if Win32App was removed before continuing. Checks: $NumberOfTimesChecked"
-        write-host "635 - $CheckIntuneAppExists"
+        Write-Log "Checking if Win32App was removed before continuing. Checks: $NumberOfTimesChecked"
+        Write-Log "635 - $CheckIntuneAppExists"
         $CheckIntuneAppExists = Get-IntuneWin32App -DisplayName "$PackageName"
         Start-Sleep 15
         $NumberOfTimesChecked++
@@ -656,7 +759,7 @@ if ($Overwrite -eq $True) {
     }
 }
     catch {
-        Write-Host "An error occurred: $_.Exception.Message" -ForeGroundColor "Red"
+        Write-Log "An error occurred: $_.Exception.Message" -ForeGroundColor "Red"
         $imported = $False
         $row | Add-Member -MemberType NoteProperty -Name "Imported" -Value $imported  #Write imported status to $row
         $errortext = "Error Remvoving Win32App: $_.Exception.Message"
@@ -669,14 +772,14 @@ if ($Overwrite -eq $True) {
     
 # Disabled section. Needs more work.
 <#  
-Write-Host "Checking if application already exists in Intune - $PackageName"
+Write-Log "Checking if application already exists in Intune - $PackageName"
     # Get the Intune Win32 apps with the specified display name
     $CheckIntuneAppExists = Get-IntuneWin32App -DisplayName "$PackageName" -WarningAction SilentlyContinue
 
     # Check if any matching applications were found
-    write-host "CheckInTuneAppExists.Count = $($CheckIntuneAppExists.Count)"
+    Write-Log "CheckInTuneAppExists.Count = $($CheckIntuneAppExists.Count)"
     if ($CheckIntuneAppExists.Count -gt 0) {
-        Write-Host "ERROR: Application with the same name already exists in Intune. Could not import - $PackageName" -ForegroundColor "Red"
+        Write-Log "ERROR: Application with the same name already exists in Intune. Could not import - $PackageName" -ForegroundColor "Red"
         $imported = $False
         $row | Add-Member -MemberType NoteProperty -Name "Imported" -Value $imported  #Write imported status to $row
         $errortext = "Already exists in InTune"
@@ -684,24 +787,24 @@ Write-Host "Checking if application already exists in Intune - $PackageName"
         continue
     }
     else {
-        Write-Host "OK! A similar package was not found in Intune."
+        Write-Log "OK! A similar package was not found in Intune."
     }
 #>
 
 #Import application to InTune
 try {
-    Write-Host "Importing application '$PackageName' to InTune"
+    Write-Log "Importing application '$PackageName' to InTune"
     $AppImport = Add-IntuneWin32App @AddInTuneWin32AppArguments -WarningAction Continue -ErrorAction Continue
     $AppID = $AppImport.ID
     $row | Add-Member -MemberType NoteProperty -Name "AppID" -Value $AppID #Write AppID to $row
-    Write-Host "Imported application '$PackageName' to InTune" -ForeGroundColor "Green"
+    Write-Log "Imported application '$PackageName' to InTune" -ForeGroundColor "Green"
     $imported = $True
 }
 catch {
-    Write-Host "An error occurred: $_.Exception.Message" -ForeGroundColor "Red"
+    Write-Log "An error occurred: $($_.Exception.Message)" -ForeGroundColor "Red"
     $imported = $False
     $row | Add-Member -MemberType NoteProperty -Name "Imported" -Value $imported  #Write imported status to $row
-    $errortext = "Error Importing: $_.Exception.Message"
+    $errortext = "Error Importing: $($_.Exception.Message)"
     $row | Add-Member -MemberType NoteProperty -Name "ErrorText" -Value $errortext  #Write errortext to $row
     continue
 }
@@ -710,17 +813,17 @@ catch {
 try {
     if ($Row.InstallIntent -contains "Required" -and ($null -ne $Row.GroupID -and $Row.GroupID -ne "")) {
         Add-IntuneWin32AppAssignmentGroup -Include -ID $Row.AppID -GroupID $Row.GroupID -Intent $row.InstallIntent -Notification $row.Notification -ErrorAction continue
-        Write-Host "Deployed AppID:$($Row.AppID) to $($Row.GroupID)" -ForeGroundColor "Green"
+        Write-Log "Deployed AppID:$($Row.AppID) to $($Row.GroupID)" -ForeGroundColor "Green"
     }
     
     # Deploy Application if set - Install Intent "Available"
     if ($Row.InstallIntent -contains "Available" -and ($null -ne $Row.GroupID -and $Row.GroupID -ne "")) {
         Add-IntuneWin32AppAssignmentGroup -Include -ID $Row.AppID -GroupID $Row.GroupID -Intent $row.InstallIntent -Notification $row.Notification -ErrorAction continue
-        Write-Host "Deployed AppID:$($Row.AppID) to $($Row.GroupID)" -ForeGroundColor "Green"
+        Write-Log "Deployed AppID:$($Row.AppID) to $($Row.GroupID)" -ForeGroundColor "Green"
     }
 }
  catch {
-    Write-Host "Error deploying $($Row.PackageID) : $_"
+    Write-Log "Error deploying $($Row.PackageID) : $_"
 }
 
 #Success
@@ -740,7 +843,7 @@ $row | Add-Member -MemberType NoteProperty -Name "Imported" -Value $imported  #W
 #If more packages to import, wait 15 seconds to avoid throttling. Microsoft Graph throttling ?
     # Check if there are more than 2 rows in $data
     if ($data.Count -gt 2) {
-        write-host "Waiting 15s before importing next package.. (Throttle)"
+        Write-Log "Waiting 15s before importing next package.. (Throttle)"
         Start-Sleep -Seconds 15
     }
 
@@ -749,7 +852,7 @@ $row | Add-Member -MemberType NoteProperty -Name "Imported" -Value $imported  #W
 ###### END FOREACH ######
 
 #Write Results
-Write-host "---- RESULTS Package Creation ----"
+Write-Log "---- RESULTS Package Creation ----"
 foreach ($row in $data) {
     $importedStatus = $row.Imported
     $textColor = "Green"  # Default to green
@@ -758,16 +861,16 @@ foreach ($row in $data) {
         $textColor = "Red"  # Change to red if Imported is False
         $importedtext = "Failed"
     }
-    write-host ""
+    Write-Log ""
     $formattedText = "IMPORTED:$ImportedText PackageID:$($row.PackageID) AppID:$($row.AppID) TargetVersion:$($row.TargetVersion) Context:$($row.Context) UpdateOnly: $($row.UpdateOnly) AcceptNewerVersion: $($row.AcceptNewerVersion) ErrorText: $($row.ErrorText)"
-    Write-Host $formattedText -ForegroundColor $textColor
+    Write-Log $formattedText -ForegroundColor $textColor
 
     # If deployed also show these results
     if ($null = $row.GroupID -or $row.GroupID -ne ""){
         if ($importedStatus -eq $True)
         {
-        Write-host "> DEPLOYED:$($row.PackageID) AppID:$($row.AppID) ----> GroupID:$($row.GroupID) InstallIntent:$($row.InstallIntent) Notification:$($row.Notification)" -ForegroundColor $textColor
+        Write-Log "> DEPLOYED:$($row.PackageID) AppID:$($row.AppID) ----> GroupID:$($row.GroupID) InstallIntent:$($row.InstallIntent) Notification:$($row.Notification)" -ForegroundColor $textColor
         }   
     }
-
+    Write-Host "Log File: $LogFile"
 }

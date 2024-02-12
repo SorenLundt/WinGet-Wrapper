@@ -1,4 +1,6 @@
-﻿# Soren Lundt - 22-08-2023 - https://github.com/SorenLundt/WinGet-Wrapper
+﻿# Soren Lundt - 22-08-2023
+# URL: https://github.com/SorenLundt/WinGet-Wrapper
+# License: https://raw.githubusercontent.com/SorenLundt/WinGet-Wrapper/main/LICENSE.txt
 # Requirements script to check if desired application is installed. To be used when only wanting to update the application if already installed.  (UpdateOnly)
 #
 # Version History:
@@ -7,7 +9,7 @@
 # Version 1.2 - 24-08-2023 SorenLundt - WindowStyle Hidden for winget process + Other small fixes..
 # Version 1.3 - 25-08-2023 SorenLundt - Removing logging part. The script must only output "Installed" or "Not Installed"
 # Version 1.4 - 24-08-2023 SorenLundt - Added --scope $Context to winget cmd to avoid detecting applications in wrong context
-# Version 1.55 - 20-10-2023 SorenLundt - Fixed issues where applications containing + would not be detected.. Regex issue
+# Version 1.5 - 20-10-2023 SorenLundt - Fixed issues where applications containing + would not be detected.. Regex issue
 
 # Settings
 $id = "Exact WinGet Package ID" # WinGet Package ID - ex. VideoLAN.VLC

@@ -1,4 +1,8 @@
-﻿# Soren Lundt - 22-02-2023 - https://github.com/SorenLundt/WinGet-Wrapper
+﻿# Soren Lundt - 22-02-2023
+# URL: https://github.com/SorenLundt/WinGet-Wrapper
+# License: https://raw.githubusercontent.com/SorenLundt/WinGet-Wrapper/main/LICENSE.txt
+# Detection script to check if desired application is installed and/or application up to date compared to WinGet.
+#
 # Version History
 # Version 1.1 - 27-02-2023 SorenLundt - Updated to retrieve current version from WinGet and dynamically check for latest version and detect based.
 # Version 1.2 - 28-02-2023 SorenLundt - Added logging capability
@@ -69,6 +73,7 @@ function Write-Log {
 #Write useful variables to log
 Write-Log "              WinGet-WrapperDetection v.$ScriptVersion"
 Write-Log "https://github.com/SorenLundt/WinGet-Wrapper"
+Write-Log "       GNU General Public License v3"
 Write-Log "**************************************************"
 Write-Log "Host: $env:ComputerName"
 Write-Log "PackageName: $id"
