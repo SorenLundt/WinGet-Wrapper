@@ -2,7 +2,7 @@
 PowerShell Scripts to deploy and bulk import WinGet packages to InTune including metadata.<br>
 Automatically detect latest version using dynamic detection script. <br>
 Detection script checks local installed version against latest winget available version or a defined fixed target version.<br>
-Bulk import WinGet packages to InTune including WinGet package metadata using WinGet-WrapperImportFromCSV.ps1 <br>
+Bulk import WinGet packages to InTune including WinGet package metadata using WinGet-WrapperImportGUI.exe <br>
 <br>
 * Dynamically finds the WinGet directory to be used under System Context.<br>
 * Kill selected process before WinGet command<br>
@@ -19,10 +19,28 @@ WinGet have a few limitations in terms of automation and is not integrated with 
 System Context is not possible by using "winget" as the .exe location must be found and this location is not static due to versioning in the directory name.<br>
 
 ## Requirements
-Newer Windows OS build that includes the WinGet natively in the OS<br>
-Windows 10 20H2 or newer should be enough<br>
+Windows 10 20H2 or newer<br>
 Powershell 5.1<br>
-WinGet-WrapperImportFromCSV.ps1 automatically installs required module "IntuneWin32App" (github.com/MSEndpointMgr/IntuneWin32App)<br>
+Automatically installs/updates required modules "IntuneWin32App" and "Microsoft.Graph.Intune" <br>
+
+## WinGet-WrapperImportGUI.exe
+WinGet-WrapperImportGUI is a graphical interface designed to streamline the import of WinGet packages into InTune. <br>
+This tool complements WinGet-Wrapper, providing an intuitive way to upload WinGet packages to InTune, along with their metadata. <br>
+
+#### Features:
+- **Search and Select:** Seamlessly search for WinGet packages and select the ones you need.
+- **InTune Integration:** Import selected WinGet packages directly into InTune for deployment.
+- **CSV Support:** Export and import packages using CSV files, facilitating batch operations.<br>
+
+![WinGet-WrapperImportGUI](https://github.com/SorenLundt/WinGet-Wrapper/assets/127216441/cdec63c5-8ebb-4fac-a93b-10d3a21cf20f)
+
+
+#### Usage:
+>**Open the GUI:** Run WinGet-WrapperImportGUI.exe to open the GUI<br>
+>**Search Packages:** Enter your search query and click "Search" to find WinGet packages.<br>
+>**Select Packages:** Select from search results, then click the center arrow to move them to the import list.<br>
+>**Import to InTune:** Enter your Tenant ID and click "Import to InTune" to import selected packages.<br>
+>**Additional Actions:** Use buttons for exporting CSV, deleting, or importing from CSV.<br>
 
 ## WinGet-Wrapper.ps1
 ![image](https://github.com/SorenLundt/WinGet-Wrapper/assets/127216441/4220b44b-7f96-4fb1-84ec-ce416f6f622c)
