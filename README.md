@@ -43,7 +43,7 @@ This tool complements WinGet-Wrapper, providing an intuitive way to upload WinGe
 >**Import to InTune:** Enter your Tenant ID and click "Import to InTune" to import selected packages.<br>
 >**Additional Actions:** Use buttons for exporting CSV, deleting, or importing from CSV.<br>
 
-If you get any errors when using the GUI, you may need to unblock winget-wrapper files from file properties.<br>
+If you get errors when using the ImportGUI, you may need to unblock winget-wrapper files from file properties.<br>
 WinGet-WrapperImportFromCSV.ps1, IntuneWinAppUtil.exe, WinGet-WrapperImportGUI.ps1, more..
 ![image](https://github.com/SorenLundt/WinGet-Wrapper/assets/127216441/9dc24e0b-966b-4aee-bfbc-e28235d1bcfb)
 
