@@ -36,6 +36,7 @@
 # Version 1.9 - 14-11-2023 SorenLundt - Fixed issue where $True was not being replace by $False for $Row.AcceptNewerVersion value - Github issue #7
 # Version 2.0 - 28-11-2023 SorenLundt - Changed various file paths to be able to use script from GUI + added logging
 # Version 2.1 - 12-02-2024 SorenLundt - Various improvements/changes to support usage from WinGet-WrapperImportGUI (-SkipModuleCheck -Scriptroot)
+# Version 2.2 - 19-02-2023 SorenLundt - Added --accept-source-agreements to winget show commands, to avoid prompt - Github issue #12
 
 #Parameters
 Param (
@@ -333,11 +334,11 @@ Write-Log "--- Validation End ---"
 Write-Log ""
 
 #Print Package details and wait for confirmation. If package not found break.
-$PackageIDOutLines = @(winget show --exact --id $($row.PackageID) --scope $($row.Context))
+$PackageIDOutLines = @(winget show --exact --id $($row.PackageID) --scope $($row.Context) --accept-source-agreements)
 #Check if targetversion specified
 if ($null -ne $row.TargetVersion -and $row.TargetVersion -ne "")
 {
-    $PackageIDOutLines = @(winget show --exact --id $($row.PackageID) --scope $($row.Context) --version $($row.TargetVersion))
+    $PackageIDOutLines = @(winget show --exact --id $($row.PackageID) --scope $($row.Context) --version $($row.TargetVersion) --accept-source-agreements)
 }
 $PackageIDout = $PackageIDOutLines -join "`r`n"
 
