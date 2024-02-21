@@ -9,6 +9,7 @@
 #
 # Version History
 # Version 1.0 - 12-02-2024 SorenLundt - Initial Version
+# Version 1.1 - 21-02-2024 SorenLundt - Fixed issue where only 1 package was imported to InTune (Script assumed there was just one row)
 
 # Greeting´
 write-host ""
@@ -587,52 +588,58 @@ $InTuneimportButton.Add_Click({
     if ($foundAllFiles) {
         Write-ConsoleTextBox "All required files found. Continue import to InTune..."
 
-        # Export DataGridViewSelected to CSV - Save CSV Temporary
-        $selectedData = @()
+# Export DataGridViewSelected to CSV - Save CSV Temporary
+$selectedData = @()
 
-        # Check if DataGridView is not empty
-        if ($dataGridViewSelected.Rows.Count -gt 0) {
-            # Get the row data if DataGridView is not empty
-            $row = $dataGridViewSelected.Rows[0]  # Assuming there's only one row
-            $packageID = $row.Cells['PackageID'].Value
-            $context = $row.Cells['Context'].Value
-            $acceptNewerVersion = $row.Cells['AcceptNewerVersion'].Value
-            $updateOnly = $row.Cells['UpdateOnly'].Value
-            
-            if ($packageID -ne $null -and $packageID -ne '' -and
-                $context -ne $null -and $context -ne '' -and
-                $acceptNewerVersion -ne $null -and $acceptNewerVersion -ne '' -and
-                $updateOnly -ne $null -and $updateOnly -ne '') {
-                [PSCustomObject]@{
-                    'PackageID' = $packageID
-                    'Context' = $context
-                    'AcceptNewerVersion' = $acceptNewerVersion
-                    'UpdateOnly' = $updateOnly
-                    'TargetVersion' = $row.Cells['TargetVersion'].Value
-                    'StopProcessInstall' = $row.Cells['StopProcessInstall'].Value
-                    'StopProcessUninstall' = $row.Cells['StopProcessUninstall'].Value
-                    'PreScriptInstall' = $row.Cells['PreScriptInstall'].Value
-                    'PostScriptInstall' = $row.Cells['PostScriptInstall'].Value
-                    'PreScriptUninstall' = $row.Cells['PreScriptUninstall'].Value
-                    'PostScriptUninstall' = $row.Cells['PostScriptUninstall'].Value
-                    'CustomArgumentListInstall' = $row.Cells['CustomArgumentListInstall'].Value
-                    'CustomArgumentListUninstall' = $row.Cells['CustomArgumentListUninstall'].Value
-                    'InstallIntent' = $row.Cells['InstallIntent'].Value
-                    'Notification' = $row.Cells['Notification'].Value
-                    'GroupID' = $row.Cells['GroupID'].Value
-                } | ForEach-Object { $selectedData += $_ }
+# Check if DataGridView is not empty
+if ($dataGridViewSelected.Rows.Count -gt 0) {
+    # Create an empty array to store the selected data
+    $selectedData = @()
+
+    # Iterate through DataGridView rows
+    foreach ($row in $dataGridViewSelected.Rows) {
+        $packageID = $row.Cells['PackageID'].Value
+        $context = $row.Cells['Context'].Value
+        $acceptNewerVersion = $row.Cells['AcceptNewerVersion'].Value
+        $updateOnly = $row.Cells['UpdateOnly'].Value
+
+        # Check if all required values are not null or empty
+        if ($packageID -ne $null -and $packageID -ne '' -and
+            $context -ne $null -and $context -ne '' -and
+            $acceptNewerVersion -ne $null -and $acceptNewerVersion -ne '' -and
+            $updateOnly -ne $null -and $updateOnly -ne '') {
+            # Create a hashtable representing the row data and add it to the selected data array
+            $rowData = [ordered]@{
+                'PackageID' = $packageID
+                'Context' = $context
+                'AcceptNewerVersion' = $acceptNewerVersion
+                'UpdateOnly' = $updateOnly
+                'TargetVersion' = $row.Cells['TargetVersion'].Value
+                'StopProcessInstall' = $row.Cells['StopProcessInstall'].Value
+                'StopProcessUninstall' = $row.Cells['StopProcessUninstall'].Value
+                'PreScriptInstall' = $row.Cells['PreScriptInstall'].Value
+                'PostScriptInstall' = $row.Cells['PostScriptInstall'].Value
+                'PreScriptUninstall' = $row.Cells['PreScriptUninstall'].Value
+                'PostScriptUninstall' = $row.Cells['PostScriptUninstall'].Value
+                'CustomArgumentListInstall' = $row.Cells['CustomArgumentListInstall'].Value
+                'CustomArgumentListUninstall' = $row.Cells['CustomArgumentListUninstall'].Value
+                'InstallIntent' = $row.Cells['InstallIntent'].Value
+                'Notification' = $row.Cells['Notification'].Value
+                'GroupID' = $row.Cells['GroupID'].Value
             }
+            $selectedData += New-Object PSObject -Property $rowData
         }
-
-        if ($selectedData -ne $null -and $selectedData.Count -gt 0) {
-            $fileName = "TempExport-$timestamp.csv"  # Construct the filename with timestamp
-            $csvFilePath = Join-Path -Path $scriptRoot -ChildPath $fileName  # Save to script root directory
-            $selectedData | Export-Csv -Path $csvFilePath -NoTypeInformation
-            Write-ConsoleTextBox "Exported: $csvFilePath"
-        } else {
-            Write-ConsoleTextBox "No data to export."
-            return  # Stop further execution
-        }
+    }
+}
+    if ($selectedData -ne $null -and $selectedData.Count -gt 0) {
+        $fileName = "TempExport-$timestamp.csv"  # Construct the filename with timestamp
+        $csvFilePath = Join-Path -Path $scriptRoot -ChildPath $fileName  # Save to script root directory
+        $selectedData | Export-Csv -Path $csvFilePath -NoTypeInformation
+        Write-ConsoleTextBox "Exported: $csvFilePath"
+    } else {
+        Write-ConsoleTextBox "No data to export."
+        return  # Stop further execution
+    }
 
         # Prepare the Import script.
         $logFile = "$scriptRoot\Logs\WinGet_WrapperImportFromCSV_$($TimeStamp).log"
@@ -648,7 +655,7 @@ $InTuneimportButton.Add_Click({
     # Define the arguments to be passed to the script
     $arguments = "-csvFile `"$csvFilePath`" -TenantID $($tenantIDTextBox.Text) -LogFile `"$logFile`" -ScriptRoot `"$scriptRoot`" -SkipConfirmation -SkipModuleCheck"
     Write-ConsoleTextBox "Arguments to be passed: $arguments"
-    Set-ExecutionPolicy Bypass -Scope Process -Force
+    Set-ExecutionPolicy Bypass -Scope Process -ExecutionPolicy Bypass -Force
     Start-Process powershell -ArgumentList "-NoProfile", "-ExecutionPolicy Bypass", "-File `"$importScriptPath`"", $arguments -Wait -NoNewWindow
 
         # Run Update-GUIFromLogFile in the main thread
