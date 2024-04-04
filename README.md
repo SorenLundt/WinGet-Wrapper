@@ -22,7 +22,7 @@ System Context is not possible by using "winget" as the .exe location must be fo
 Windows 10 20H2 or newer<br>
 Powershell 5.1<br>
 Client language must be en-US, as Winget-Wrapper parses only English output. <br>
-Module "IntuneWin32App" and "Microsoft.Graph.Intune" needed for import actions <br>
+Module "IntuneWin32App" and "Microsoft.Graph.Intune" needed for import to InTune <br>
 
 ## WinGet-WrapperImportGUI.exe
 WinGet-WrapperImportGUI is a graphical interface designed to streamline the import of WinGet packages into InTune. <br>
