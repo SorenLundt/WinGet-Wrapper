@@ -124,3 +124,7 @@ Setup Requirement rule script with return string value of "Installed"<br><br>
 ![image](https://github.com/SorenLundt/WinGet-Wrapper/assets/127216441/b2bdb617-c74a-4902-9c2c-b8defe1adc70)
 
 ![image](https://github.com/SorenLundt/WinGet-Wrapper/assets/127216441/b8cd24fd-da34-4e1c-aeb2-0627717e1244)
+
+
+## Disclaimer
+This software is provided "AS IS" with no warranties. Use at your own risk.
