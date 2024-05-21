@@ -182,7 +182,7 @@ foreach ($row in $data){
 #Connect to Intune
 #if (-not $SkipInTuneConnection){
 try{  
-Connect-MSIntuneGraph -TenantID "$TenantID" ClientID $ClientID -Interactive
+Connect-MSIntuneGraph -TenantID "$TenantID" -ClientID $ClientID -Interactive
 }
 catch {
     Write-Log "ERROR: Connect-MSIntuneGraph Failed. Exiting" -ForegroundColor "Red"
