@@ -33,7 +33,7 @@ This tool complements WinGet-Wrapper, providing an intuitive way to upload WinGe
 - **InTune Integration:** Import selected WinGet packages directly into InTune for deployment.
 - **CSV Support:** Export and import packages using CSV files, facilitating batch operations.<br>
 
-![image](https://github.com/SorenLundt/WinGet-Wrapper/Images/WinGet-WrapperImportGUI.png)
+![image](Images/WinGet-WrapperImportGUI.png)
 
 
 #### Usage:
