@@ -10,18 +10,33 @@
 # Version History
 # Version 1.0 - 12-02-2024 SorenLundt - Initial Version
 # Version 1.1 - 21-02-2024 SorenLundt - Fixed issue where only 1 package was imported to InTune (Script assumed there was just one row)
+# Version 1.2 - 30-10-2024 SorenLundt - Various improvements (Ability to get details and available versions for packages, loading GUI progressbar, link to repo, unblock script files, bug fixes.)
 
-# Greeting´
+
+# Greeting
 write-host ""
 Write-Host "****************************************************"
-Write-Host "                  WinGet-Wrapper"
+Write-Host "                  WinGet-Wrapper)"
 Write-Host "  https://github.com/SorenLundt/WinGet-Wrapper"
 Write-Host ""
 Write-Host "          GNU General Public License v3"
 Write-Host "****************************************************"
+write-host "   WinGet-WrapperImportGUI Starting up.."
 write-host ""
 
-Write-Host "Loading Winget-WrapperImportGUI.."
+# Function to show loading progress bar in console.
+function Show-ConsoleProgress {
+    param (
+        [string]$Activity = "Loading Winget-Wrapper Import GUI",
+        [string]$Status = "",
+        [int]$PercentComplete = 0
+    )
+    Write-Host "$Status - [$PercentComplete%]"
+    Write-Progress -Activity $Activity -Status $Status -PercentComplete $PercentComplete
+}
+
+# Update ConsoleProgress
+Show-ConsoleProgress -PercentComplete 0 -Status "Initializing..."
 
 # Add required assemblies
 Add-Type -AssemblyName System.Windows.Forms
@@ -49,13 +64,12 @@ $intuneWin32AppModule = "IntuneWin32App"
 $microsoftGraphIntuneModule = "Microsoft.Graph.Intune"
 
 #DEBUG (Skip ModuleCheck)
-#$SKIPMODULECHECK = $true
+#$SKIPMODULECHECK = $true 
 if (-not $SKIPMODULECHECK) {
 
-Write-Host "Checking and updating required modules.."
-
 # Check IntuneWin32App module
-Write-Host "Checking module $intuneWin32AppModule.."
+# Update ConsoleProgress
+Show-ConsoleProgress -PercentComplete 10 -Status "Checking and updating $intuneWin32AppModule.."  
 $moduleInstalled = Get-InstalledModule -Name $intuneWin32AppModule -ErrorAction SilentlyContinue
 if (-not $moduleInstalled) {
     Install-Module -Name $intuneWin32AppModule -Force
@@ -69,7 +83,8 @@ if (-not $moduleInstalled) {
 }
 
 # Check Microsoft.Graph.Intune module
-Write-Host "Checking module $microsoftGraphIntuneModule.."
+# Update ConsoleProgress
+Show-ConsoleProgress -PercentComplete 40 -Status "Checking and updating $microsoftGraphIntuneModule.."  
 $moduleInstalled = Get-InstalledModule -Name $microsoftGraphIntuneModule -ErrorAction SilentlyContinue
 
 if (-not $moduleInstalled) {
@@ -83,11 +98,28 @@ if (-not $moduleInstalled) {
     }
 }
 }
+
+
 #Import modules
-Write-Host "Importing module $intuneWin32AppModule.."
+Show-ConsoleProgress -PercentComplete 60 -Status  "Importing module $intuneWin32AppModule.."
 Import-Module -Name "IntuneWin32App"
-Write-Host "Importing module $microsoftGraphIntuneModule.."
+
+Show-ConsoleProgress -PercentComplete 80 -Status  "Importing module $microsoftGraphIntuneModule.."
 Import-Module -Name "Microsoft.Graph.Intune"
+
+Show-ConsoleProgress -PercentComplete 90 -Status  "Unblocking script files (Unblock-File)"
+# Unblock all files in the current directory
+$files = Get-ChildItem -Path . -File
+foreach ($file in $files) {
+    try {
+        Unblock-File -Path $file.FullName
+    } catch {
+        Write-Host "Failed to unblock: $($file.FullName) - $_"
+    }
+}
+
+# Update ConsoleProgress
+Show-ConsoleProgress -PercentComplete 80 -Status "Loading functions.."   
 
 #Functions
 function Write-ConsoleTextBox {
@@ -123,14 +155,15 @@ function Update-GUIFromLogFile {
     }
 }
 
-Write-Host "Loading GUI elements.."
+# Update ConsoleProgress
+Show-ConsoleProgress -PercentComplete 90 -Status "Loading GUI elements.."   
 
 # GUI
 # Create form
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "Winget-Wrapper Import GUI  - https://github.com/SorenLundt/WinGet-Wrapper"
 $form.Width = 1475
-$form.Height = 900
+$form.Height = 1000
 $form.BackColor = [System.Drawing.Color]::WhiteSmoke
 $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedSingle
 $form.Topmost = $false
@@ -146,11 +179,27 @@ if (Test-Path $iconPath) {
     Write-Host "Icon file not found at $iconPath"
 }
 
+# Create a Link to GitHub page
+$linkLabel = New-Object System.Windows.Forms.LinkLabel
+$linkLabel.Text = 'Visit the GitHub Repository'
+$linkLabel.Location = New-Object System.Drawing.Point(1280, 10)
+$linkLabel.AutoSize = $true
+$linkLabel.LinkColor = [System.Drawing.Color]::Blue
+$linkLabel.Font = New-Object System.Drawing.Font('Arial', 10, [System.Drawing.FontStyle]::Underline)
+$form.Controls.Add($linkLabel)
+
+# Add click event to the LinkLabel
+$linkLabel.Add_LinkClicked({
+    Start-Process "https://github.com/SorenLundt/WinGet-Wrapper"  # Change to your desired URL
+})
+
 # Create TextBox for search string
 $searchBox = New-Object System.Windows.Forms.TextBox
 $searchBox.Location = New-Object System.Drawing.Point(10, 10)
 $searchBox.Width = 400
 $form.Controls.Add($searchBox)
+$searchBoxtooltip = New-Object System.Windows.Forms.ToolTip
+$searchBoxtooltip.SetToolTip($searchBox, 'Enter software name, ex. VLC, 7-zip, etc.')
 
 # Create Button for search
 $searchButton = New-Object System.Windows.Forms.Button
@@ -170,7 +219,7 @@ $form.Controls.Add($searchErrorLabel)
 $resultsLabel = New-Object System.Windows.Forms.Label
 $resultsLabel.Location = New-Object System.Drawing.Point(10, 37)
 $resultsLabel.Width = 200
-$resultsLabel.Text = "WinGet Packages Search Results"
+$resultsLabel.Text = "WinGet Packages"
 $form.Controls.Add($resultsLabel)
 
 # Create DataGridView for results
@@ -178,6 +227,7 @@ $dataGridView = New-Object System.Windows.Forms.DataGridView
 $dataGridView.Location = New-Object System.Drawing.Point(10, 60)
 $dataGridView.Width = 600
 $dataGridView.Height = 500
+$dataGridView.SelectionMode = [System.Windows.Forms.DataGridViewSelectionMode]::FullRowSelect  # Only allow full row selection
 $form.Controls.Add($dataGridView)
 
 # Add columns to DataGridView
@@ -194,7 +244,7 @@ $dataGridView.Columns['Version'].Width = 100  # Adjust the width as needed
 $resultsLabel = New-Object System.Windows.Forms.Label
 $resultsLabel.Location = New-Object System.Drawing.Point(650, 37)
 $resultsLabel.Width = 200
-$resultsLabel.Text = "Selected WinGet Packages"
+$resultsLabel.Text = "InTune Import List"
 $form.Controls.Add($resultsLabel)
 
 # Create a second DataGridView
@@ -229,7 +279,7 @@ foreach ($column in $dataGridViewSelected.Columns){
 
 # Create Button for exporting CSV from dataGridViewSelected
 $exportButton = New-Object System.Windows.Forms.Button
-$exportButton.Location = New-Object System.Drawing.Point(750, 560)
+$exportButton.Location = New-Object System.Drawing.Point(760, 565)
 $exportButton.Width = 100
 $exportButton.Text = "Export CSV"
 $form.Controls.Add($exportButton)
@@ -239,6 +289,8 @@ $moveButton = New-Object System.Windows.Forms.Button
 $moveButton.Location = New-Object System.Drawing.Point(618, 280)
 $moveButton.Width = 30
 $moveButton.Height = 30
+$moveButtontooltip = New-Object System.Windows.Forms.ToolTip
+$moveButtontooltip.SetToolTip($moveButton, 'Add Selected Package(s) to Import List')
 
 # Create a Bitmap for the arrow icon
 $arrowIcon = New-Object System.Drawing.Bitmap 50, 50
@@ -263,14 +315,14 @@ $form.Controls.Add($moveButton)
 
 # Create Button for deleting selected rows
 $deleteButton = New-Object System.Windows.Forms.Button
-$deleteButton.Location = New-Object System.Drawing.Point(1350, 560)
+$deleteButton.Location = New-Object System.Drawing.Point(1350, 565)
 $deleteButton.Width = 100
 $deleteButton.Text = "Delete Selected"
 $form.Controls.Add($deleteButton)
 
 # Create Button for importing CSV to dataGridViewSelected
 $importCSVButton = New-Object System.Windows.Forms.Button
-$importCSVButton.Location = New-Object System.Drawing.Point(650, 560)
+$importCSVButton.Location = New-Object System.Drawing.Point(650, 565)
 $importCSVButton.Width = 100
 $importCSVButton.Text = "Import CSV"
 $form.Controls.Add($importCSVButton)
@@ -279,14 +331,14 @@ $form.Controls.Add($importCSVButton)
 $consoleTextBox = New-Object System.Windows.Forms.TextBox
 $consoleTextBox.Location = New-Object System.Drawing.Point(10, 650)
 $consoleTextBox.Width = 1420
-$consoleTextBox.Height = 200
+$consoleTextBox.Height = 300
 $consoleTextBox.Multiline = $true
 $consoleTextBox.ScrollBars = "Vertical"
 $form.Controls.Add($consoleTextBox)
 
 # Create Button for importing data into InTune
 $InTuneimportButton = New-Object System.Windows.Forms.Button
-$InTuneimportButton.Location = New-Object System.Drawing.Point(650, 610)
+$InTuneimportButton.Location = New-Object System.Drawing.Point(650, 615)
 $InTuneimportButton.Width = 120
 $InTuneimportButton.Text = "Import to InTune"
 $IntuneImportButton.Visible = $True
@@ -294,7 +346,7 @@ $form.Controls.Add($InTuneimportButton)
 
 # Create TextBox for Tenant ID
 $tenantIDTextBox = New-Object System.Windows.Forms.TextBox
-$tenantIDTextBox.Location = New-Object System.Drawing.Point(650, 585)
+$tenantIDTextBox.Location = New-Object System.Drawing.Point(650, 590)
 $tenantIDTextBox.Width = 300
 $form.Controls.Add($tenantIDTextBox)
 
@@ -303,9 +355,25 @@ $tenantIDTextBoxDefaultText = "Enter Tenant ID (e.g., company.onmicrosoft.com)"
 $tenantIDTextBox.Text = "$tenantIDTextBoxDefaultText"
 $tenantIDTextBox.ForeColor = [System.Drawing.Color]::Gray
 
-#OutPut to textbox in GUI
+# Create Button for Getting Package Details
+$GetPackageDetails = New-Object System.Windows.Forms.Button
+$GetPackageDetails.Location = New-Object System.Drawing.Point(10, 565)
+$GetPackageDetails.Width = 240
+$GetPackageDetails.Text = "Get detailed info for selected package(s)"
+$GetPackageDetails.Visible = $True
+$form.Controls.Add($GetPackageDetails)
 
-Write-Host "Loading Event handlers"
+# Create Button for Getting Package Versions
+$GetPackageVersions = New-Object System.Windows.Forms.Button
+$GetPackageVersions.Location = New-Object System.Drawing.Point(260, 565)
+$GetPackageVersions.Width = 240
+$GetPackageVersions.Text = "Get available versions for selected package(s)"
+$GetPackageVersions.Visible = $True
+$form.Controls.Add($GetPackageVersions)
+
+# Update ConsoleProgress
+Show-ConsoleProgress -PercentComplete 95 -Status "Loading Event handlers.."
+
 # EVENTS
 # Event handler for when the textbox gains focus (Enter event)
 $tenantIDTextBox.Add_Enter({
@@ -451,6 +519,9 @@ $moveButton.Add_Click({
         $name = $row.Cells['Name'].Value
         $id = $row.Cells['ID'].Value
         $version = $row.Cells['Version'].Value
+
+        #Write-ConsoleTextBox "Getting Details about $id"
+        #WinGetPackageDetails -packageID $id
         
         # Add a new row to $dataGridViewSelected
         $rowIndex = $dataGridViewSelected.Rows.Add()
@@ -461,7 +532,7 @@ $moveButton.Add_Click({
         # Set default values for other columns
         $dataGridViewSelected.Rows[$rowIndex].Cells['Context'].Value = "Machine"
         $dataGridViewSelected.Rows[$rowIndex].Cells['AcceptNewerVersion'].Value = "1"
-        $dataGridViewSelected.Rows[$rowIndex].Cells['UpdateOnly'].Value = "1"
+        $dataGridViewSelected.Rows[$rowIndex].Cells['UpdateOnly'].Value = "0"
         
         # Autosize columns in $dataGridViewSelected after adding rows and setting values
     $dataGridViewSelected.AutoResizeColumns([System.Windows.Forms.DataGridViewAutoSizeColumnMode]::AllCells)
@@ -470,6 +541,58 @@ $moveButton.Add_Click({
         #$dataGridView.Rows.Remove($row)  # Do not remove row after copy to selected datagridview
     }
 })
+
+# Function to get WinGet package details for a single/selected package (to find possible winget values, system, versions, etc etc.)
+function WinGetPackageDetails {
+    param (
+        [string]$PackageID
+    )
+
+    # Get package details and available versions
+    $WingetPackageDetails = winget show --id $PackageID --source WinGet --accept-source-agreements --disable-interactivity
+
+    # Output package details line by line to maintain formatting
+    Write-ConsoleTextBox "$PackageID - Details:"
+    $WingetPackageDetails -split "`r?`n" | ForEach-Object { Write-ConsoleTextBox $_ }
+    Write-ConsoleTextBox "_"  # Separator for readability
+
+
+    # Optionally return the available versions array for further processing
+    return $WinGetPackageDetails
+}
+
+# Function to get WinGet package versions for a single/selected package (to find possible winget values, system, versions, etc etc.)
+function WinGetPackageVersions {
+    param (
+        [string]$PackageID
+    )
+    # Get package details and available versions
+    $WingetPackageVersionsOutput = winget show --id $PackageID --source WinGet --versions
+
+    # Output available versions header
+    Write-ConsoleTextBox "$PackageID - Available Versions:"
+
+    # Initialize an array for the available versions
+    $WinGetPackageVersions = @()  
+
+    # Split version details into lines and filter out empty lines
+    $versionLines = $WingetPackageVersionsOutput -split "`r?`n" | Where-Object { 
+        -not [string]::IsNullOrWhiteSpace($_) 
+    }
+
+    # Skip the first three lines and process the remaining lines
+    foreach ($line in $versionLines[3..($versionLines.Length - 1)]) {
+        $trimmedLine = $line.Trim()  # Trim whitespace
+        if (-not [string]::IsNullOrWhiteSpace($trimmedLine) -and $trimmedLine -notmatch '^-+$') {  # Check it's not empty or dashes
+            $WinGetPackageVersions += $trimmedLine  # Add to available versions array
+            Write-ConsoleTextBox $trimmedLine  # Display each version line
+        }
+    }
+
+    # Return the available versions array for further processing
+    return $WinGetPackageVersions  # Return the array using the specified variable name
+}
+
 
 # Define a function to parse the search results
 function ParseSearchResults($searchResult) {
@@ -495,12 +618,13 @@ function ParseSearchResults($searchResult) {
 }
 # Define the PerformSearch function that uses the parsing function
 function PerformSearch {
-    #Clear consoleTextBox before running code
-    $consoleTextBox.Clear()
     $searchString = $searchBox.Text
     $searchErrorLabel.Text = "Searching for '$searchString'"
 
-    # Your existing search logic here
+    #Update winget sources (to prevent source updating as part of results, wierd output)
+    @(winget source update)
+
+    # Search Logic
     if (![string]::IsNullOrWhiteSpace($searchString)) {
         Write-ConsoleTextBox "winget search --query $searchString --source WinGet --accept-source-agreements --disable-interactivity"
         $searchResult = @(winget search --query $searchString --source WinGet --accept-source-agreements --disable-interactivity)
@@ -527,7 +651,7 @@ function PerformSearch {
         $parsedSearchResult | ForEach-Object {
             $row = $dataGridView.Rows.Add($_.Name, $_.ID, $_.Version)
         }
-        $searchErrorLabel.Text = "Finished searching for '$searchString'"
+        $searchErrorLabel.Text = "Found $($dataGridView.RowCount) packages for '$searchString'"
         }
     } else {
         $dataGridView.Rows.Clear()
@@ -548,11 +672,26 @@ $form.Add_KeyDown({
     }
 })
 
+# Event Handler for Get package details button
+$GetPackageDetails.Add_Click({
+    $selectedRows = $dataGridView.SelectedRows
+    foreach ($row in $selectedRows) {
+        $id = $row.Cells['ID'].Value
+    WinGetPackageDetails -PackageID "$id"
+    }
+})
+
+# Event Handler for Get package versions button
+$GetPackageVersions.Add_Click({
+    $selectedRows = $dataGridView.SelectedRows
+    foreach ($row in $selectedRows) {
+        $id = $row.Cells['ID'].Value
+    WinGetPackageVersions -PackageID "$id"
+    }
+})
+
 # Event handler for the "Import to InTune" button
 $InTuneimportButton.Add_Click({
-    # Clear consoleTextBox before running code
-    $consoleTextBox.Clear()
-
     Write-ConsoleTextBox "Started import to InTune.."
 
     # Check if $tenantIDTextBox.Text is empty, matches $tenantIDTextBoxDefaultText, or does not contain a dot
@@ -655,7 +794,7 @@ if ($dataGridViewSelected.Rows.Count -gt 0) {
     # Define the arguments to be passed to the script
     $arguments = "-csvFile `"$csvFilePath`" -TenantID $($tenantIDTextBox.Text) -LogFile `"$logFile`" -ScriptRoot `"$scriptRoot`" -SkipConfirmation -SkipModuleCheck"
     Write-ConsoleTextBox "Arguments to be passed: $arguments"
-    Set-ExecutionPolicy Bypass -Scope Process -ExecutionPolicy Bypass -Force
+    #Set-ExecutionPolicy Bypass -Scope Process -ExecutionPolicy Bypass -Force
     Start-Process powershell -ArgumentList "-NoProfile", "-ExecutionPolicy Bypass", "-File `"$importScriptPath`"", $arguments -Wait -NoNewWindow
 
         # Run Update-GUIFromLogFile in the main thread
@@ -677,6 +816,9 @@ if ($dataGridViewSelected.Rows.Count -gt 0) {
         Write-ConsoleTextBox "Not all required files were found. Code will not run."
     }
 })
+
+# Update ConsoleProgress
+Show-ConsoleProgress -PercentComplete 100 -Status "Sucessfully loaded Winget-Wrapper Import GUI"
 
 # Greeting
 Write-ConsoleTextBox "****************************************************"
