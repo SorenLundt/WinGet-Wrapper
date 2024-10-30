@@ -122,6 +122,18 @@ Setup Requirement rule script with return string value of "Installed"<br><br>
 
 ![image](https://github.com/SorenLundt/WinGet-Wrapper/assets/127216441/b8cd24fd-da34-4e1c-aeb2-0627717e1244)
 
+## Is Winget Safe to Use in Enterprise?  <br>
+Winget (Windows Package Manager) is generally safe for enterprise use due to the following security features:  <br>
+  <br>
+* Package Verification: Utilizes hash checks to ensure package integrity.  <br>
+* Microsoft Vetting: Packages undergo thorough testing and scanning before approval.  <br>
+* Manual Approvals: Human oversight adds an extra layer of security.  <br>
+* User Controls: Enterprises can restrict installations through whitelisting.  <br>
+* Regular Updates: Active maintenance and community involvement enhance security.  <br>
+<br>
+Overall, Winget is a secure option for enterprises, especially when proper management practices are implemented. Continuous monitoring is key to maintaining security.  <br>
 
 ## Disclaimer
-This software is provided "AS IS" with no warranties. Use at your own risk.
+While Winget provides various security measures, no software management tool is entirely risk-free. Organizations should continually assess their security posture and policies when using Winget or any other software deployment tool. <br>
+<br>
+**This software is provided "AS IS" with no warranties. Use at your own risk.** <br>
