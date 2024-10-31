@@ -11,7 +11,13 @@
 # Version 1.0 - 12-02-2024 SorenLundt - Initial Version
 # Version 1.1 - 21-02-2024 SorenLundt - Fixed issue where only 1 package was imported to InTune (Script assumed there was just one row)
 # Version 1.2 - 30-10-2024 SorenLundt - Various improvements (Ability to get details and available versions for packages, loading GUI progressbar, link to repo, unblock script files, bug fixes.)
+# Version 1.3 - 31-10-2024 SorenLundt - Added Column Definitions help button, added SKIPMODULECHECK param to skip check if required modules are up-to-date. (testing use)
 
+#Parameters
+Param (
+    #Skip module checking (for testing purposes)
+    [Switch]$SKIPMODULECHECK = $false
+)
 
 # Greeting
 write-host ""
@@ -163,7 +169,7 @@ Show-ConsoleProgress -PercentComplete 90 -Status "Loading GUI elements.."
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "Winget-Wrapper Import GUI  - https://github.com/SorenLundt/WinGet-Wrapper"
 $form.Width = 1475
-$form.Height = 1000
+$form.Height = 980
 $form.BackColor = [System.Drawing.Color]::WhiteSmoke
 $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedSingle
 $form.Topmost = $false
@@ -179,18 +185,46 @@ if (Test-Path $iconPath) {
     Write-Host "Icon file not found at $iconPath"
 }
 
+<# Create a Link to GitHub page
+$linkLabelGitHub = New-Object System.Windows.Forms.LinkLabel
+$linkLabelGitHub.Text = 'Visit the GitHub Repository'
+$linkLabelGitHub.Location = New-Object System.Drawing.Point(1296, 5)  # Adjusted position for better layout
+$linkLabelGitHub.AutoSize = $true
+$linkLabelGitHub.LinkColor = [System.Drawing.Color]::Blue
+$linkLabelGitHub.Font = New-Object System.Drawing.Font('Arial', 8, [System.Drawing.FontStyle]::Bold)  # Use the same font as the Column Guide
+$linkLabelGitHub.BackColor = [System.Drawing.Color]::LightGray  # Background color for consistency
+$linkLabelGitHub.Padding = New-Object System.Windows.Forms.Padding(1)  # Add padding for consistency
+$linkLabelGitHub.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle  # Add a border to make it stand out
+$form.Controls.Add($linkLabelGitHub)#>
+
 # Create a Link to GitHub page
-$linkLabel = New-Object System.Windows.Forms.LinkLabel
-$linkLabel.Text = 'Visit the GitHub Repository'
-$linkLabel.Location = New-Object System.Drawing.Point(1280, 10)
-$linkLabel.AutoSize = $true
-$linkLabel.LinkColor = [System.Drawing.Color]::Blue
-$linkLabel.Font = New-Object System.Drawing.Font('Arial', 10, [System.Drawing.FontStyle]::Underline)
-$form.Controls.Add($linkLabel)
+$linkLabelGitHub = New-Object System.Windows.Forms.LinkLabel
+$linkLabelGitHub.Text = 'Visit the GitHub Repository'
+$linkLabelGitHub.Location = New-Object System.Drawing.Point(1280, 10)
+$linkLabelGitHub.AutoSize = $true
+$linkLabelGitHub.LinkColor = [System.Drawing.Color]::Blue
+$linkLabelGitHub.Font = New-Object System.Drawing.Font('Arial', 10, [System.Drawing.FontStyle]::Underline)
+$form.Controls.Add($linkLabelGitHub)
+
+# Create a help label to get column definitions
+$ColumnHelpLabel = New-Object System.Windows.Forms.Label
+$ColumnHelpLabel.Text = 'Show Column Definitions'
+$ColumnHelpLabel.Location = New-Object System.Drawing.Point(1310, 40)
+$ColumnHelpLabel.AutoSize = $true
+#$ColumnHelpLabel.ForeColor = [System.Drawing.Color]::Blue  # Set text color to blue
+$ColumnHelpLabel.Font = New-Object System.Drawing.Font('Arial', 8, [System.Drawing.FontStyle]::Bold)  # Make the text bold
+$ColumnHelpLabel.BackColor = [System.Drawing.Color]::LightGray  # Background color for contrast
+$ColumnHelpLabel.Padding = New-Object System.Windows.Forms.Padding(1)  # Add some padding around the text
+$form.Controls.Add($ColumnHelpLabel)
 
 # Add click event to the LinkLabel
-$linkLabel.Add_LinkClicked({
+$linkLabelGitHub.Add_LinkClicked({
     Start-Process "https://github.com/SorenLundt/WinGet-Wrapper"  # Change to your desired URL
+})
+
+# Click event for Column Help Button
+$ColumnHelpLabel.Add_Click({
+    GetColumnDefinitions
 })
 
 # Create TextBox for search string
@@ -331,7 +365,7 @@ $form.Controls.Add($importCSVButton)
 $consoleTextBox = New-Object System.Windows.Forms.TextBox
 $consoleTextBox.Location = New-Object System.Drawing.Point(10, 650)
 $consoleTextBox.Width = 1420
-$consoleTextBox.Height = 300
+$consoleTextBox.Height = 280
 $consoleTextBox.Multiline = $true
 $consoleTextBox.ScrollBars = "Vertical"
 $form.Controls.Add($consoleTextBox)
@@ -394,7 +428,10 @@ $tenantIDTextBox.Add_Leave({
 # Event handler for deleting selected rows
 $deleteButton.Add_Click({
     foreach ($row in $dataGridViewSelected.SelectedRows) {
+        $packageID = $row.Cells['PackageID'].Value
         $dataGridViewSelected.Rows.Remove($row)
+        Write-ConsoleTextBox "Removed '$PackageID' from import list"
+
     }
 
     # Autosize columns after deleting rows
@@ -519,9 +556,6 @@ $moveButton.Add_Click({
         $name = $row.Cells['Name'].Value
         $id = $row.Cells['ID'].Value
         $version = $row.Cells['Version'].Value
-
-        #Write-ConsoleTextBox "Getting Details about $id"
-        #WinGetPackageDetails -packageID $id
         
         # Add a new row to $dataGridViewSelected
         $rowIndex = $dataGridViewSelected.Rows.Add()
@@ -537,10 +571,51 @@ $moveButton.Add_Click({
         # Autosize columns in $dataGridViewSelected after adding rows and setting values
     $dataGridViewSelected.AutoResizeColumns([System.Windows.Forms.DataGridViewAutoSizeColumnMode]::AllCells)
 
+    Write-ConsoleTextBox "Added '$id' to import list"
+
         # Optionally remove the row from the original DataGridView
         #$dataGridView.Rows.Remove($row)  # Do not remove row after copy to selected datagridview
     }
 })
+
+# Function to write Column Definitions to ConsoleWriteBox
+Function GetColumnDefinitions {
+    # Fetch the content of the README.md file
+    $url = "https://raw.githubusercontent.com/SorenLundt/WinGet-Wrapper/main/README.md"
+    Write-ConsoleTextBox "$url"
+    $response = Invoke-WebRequest -Uri $url
+
+    # Check if the request was successful
+    if ($response.StatusCode -eq 200) {
+        $content = $response.Content
+
+        # Get column names dynamically from the DataGridView
+        $columnNames = @()
+        foreach ($column in $dataGridViewSelected.Columns) {
+            $columnNames += $column.Name  # Collect column names into an array
+        }
+        Write-ConsoleTextBox "Column Name --> Description"
+        Write-ConsoleTextBox "****************************"        
+        # Loop through each column name
+        foreach ($columnName in $columnNames) {
+            # Use regex to find the line corresponding to the column name
+            if ($content -match "\* $columnName\s*=\s*(.*?)<br>") {
+                $description = $matches[1] -replace "<br>", "`n" -replace "\* ", "" # Clean up the description
+                Write-ConsoleTextBox "$columnName --> $description"
+            } else {
+                Write-ConsoleTextBox "$columnName --> No description found."
+            }
+        }
+        Write-ConsoleTextBox "****************************"
+    } else {
+        Write-ConsoleTextBox "Failed to retrieve the README file. Status code: $($response.StatusCode)"
+    }
+}
+
+
+
+
+
 
 # Function to get WinGet package details for a single/selected package (to find possible winget values, system, versions, etc etc.)
 function WinGetPackageDetails {
