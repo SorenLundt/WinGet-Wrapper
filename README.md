@@ -2,7 +2,7 @@
 PowerShell Scripts to deploy and bulk import WinGet packages to InTune including metadata.<br>
 Automatically detect latest version using dynamic detection script. <br>
 Detection script checks local installed version against latest winget available version or a defined fixed target version.<br>
-Bulk import WinGet packages to InTune including WinGet package metadata using WinGet-WrapperImportGUI.exe <br>
+Bulk import WinGet packages to InTune including WinGet package metadata using Start-GUI.cmd <br>
 <br>
 * Dynamically finds the WinGet directory to be used under System Context.<br>
 * Kill selected process before WinGet command<br>
@@ -21,10 +21,10 @@ System Context is not possible by using "winget" as the .exe location must be fo
 ## Requirements
 Windows 10 20H2 or newer<br>
 Powershell 5.1<br>
-Client language must be en-US, as Winget-Wrapper parses only English output. <br>
-Module "IntuneWin32App" and "Microsoft.Graph.Intune" needed for import to InTune <br>
+Client language must be en-US and set as language with the highest priority under Settings -> Language & region, as Winget-Wrapper parses only English output. <br>
+Module "IntuneWin32App", "Microsoft.Graph.Intune" and "Microsoft.Graph.Authentication" needed for import to InTune <br>
 
-## WinGet-WrapperImportGUI.exe
+## WinGet-WrapperImportGUI
 WinGet-WrapperImportGUI is a graphical interface designed to streamline the import of WinGet packages into InTune. <br>
 This tool complements WinGet-Wrapper, providing an intuitive way to upload WinGet packages to InTune, along with their metadata. <br>
 
@@ -37,7 +37,7 @@ This tool complements WinGet-Wrapper, providing an intuitive way to upload WinGe
 
 
 #### Usage:
->**Open the GUI:** Run WinGet-WrapperImportGUI.exe to open the GUI<br>
+>**Open the GUI:** Run Start-GUI.cmd to open the GUI<br>
 >**Search Packages:** Enter your search query and click "Search" to find WinGet packages.<br>
 >**Select Packages:** Select from search results, then click the center arrow to move them to the import list.<br>
 >**Adjust:** Select target version if required, UpdateOnly, Installation context, etc.<br>
